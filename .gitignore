@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+.vs/
+.idea/
+artifacts/packages/*.nupkg
+artifacts/packages/*.snupkg
+artifacts/**/*.log
+artifacts/demo-output/
+artifacts/
+*.user
+*.suo

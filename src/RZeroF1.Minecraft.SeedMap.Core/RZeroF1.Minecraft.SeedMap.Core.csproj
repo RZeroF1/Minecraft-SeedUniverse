@@ -1,0 +1,62 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. -->
+<!-- Copyright (c) 2026 RZeroF1. -->
+<!-- If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. -->
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>RZeroF1.Minecraft.SeedMap</AssemblyName>
+    <RootNamespace>RZeroF1.Minecraft.SeedMap</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IsPackable>true</IsPackable>
+    <PackageId>RZeroF1.Minecraft.SeedMap</PackageId>
+    <PackageVersion Condition="'$(PackageVersion)' == ''">0.1.0</PackageVersion>
+    <Version Condition="'$(Version)' == ''">$(PackageVersion)</Version>
+    <Authors>RZeroF1</Authors>
+    <Description>面向 Minecraft Java 世界计算、地图瓦片、结构查询与离屏渲染的纯能力 SeedMap SDK。</Description>
+    <PackageTags>minecraft;java;seed;seedmap;cubiomes;world-generation;biome;structure;map</PackageTags>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseExpression>MPL-2.0</PackageLicenseExpression>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/RZeroF1/WinUI3-Minecraft-SeedMap</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/RZeroF1/WinUI3-Minecraft-SeedMap</PackageProjectUrl>
+    <PackageReleaseNotes>首个正式版本：提供 Minecraft Java 世界计算、异步瓦片、结构查询、坐标与相机数学、群系颜色、几何和 BGRA 导出 API，包含 win-x64 Cubiomes 原生后端。</PackageReleaseNotes>
+    <PackageOutputPath>$(RepositoryRoot)\artifacts\packages\</PackageOutputPath>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <DebugType>portable</DebugType>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.403" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="$(RepositoryRoot)\README.md" Pack="true" PackagePath="" />
+    <None Include="$(RepositoryRoot)\LICENSE" Pack="true" PackagePath="" />
+    <None Include="$(RepositoryRoot)\THIRD-PARTY-NOTICES.md" Pack="true" PackagePath="" />
+    <None Include="$(RepositoryRoot)\docs\**\*" Pack="true" PackagePath="docs" />
+    <None Include="$(RepositoryRoot)\licenses\cubiomes\LICENSE" Pack="true" PackagePath="licenses\cubiomes" />
+    <None Include="$(RepositoryRoot)\licenses\cubiomes\SOURCE.md" Pack="true" PackagePath="licenses\cubiomes" />
+    <None Include="$(RepositoryRoot)\licenses\cubiomes\manifest.json" Pack="true" PackagePath="licenses\cubiomes" />
+    <None Include="$(TargetDir)rzero_seedmap.dll"
+          Pack="true"
+          PackagePath="runtimes\win-x64\native" />
+  </ItemGroup>
+
+  <Target Name="BuildSeedMapNative"
+          BeforeTargets="PrepareForBuild"
+          Inputs="$(MSBuildProjectDirectory)\..\..\native\cubiomes\seedmap.c;$(MSBuildProjectDirectory)\..\..\native\cubiomes\seedmap.h;$(MSBuildProjectDirectory)\..\..\native\cubiomes\build.cmd"
+          Outputs="$(TargetDir)rzero_seedmap.dll"
+          Condition="'$(SeedMapNativeRid)' == 'win-x64'">
+    <MakeDir Directories="$(TargetDir)" />
+    <Exec Command="&quot;$(MSBuildProjectDirectory)\..\..\native\cubiomes\build.cmd&quot; x64 &quot;$(TargetDir)&quot;" />
+  </Target>
+
+  <Target Name="RejectUnsupportedSeedMapRid"
+          BeforeTargets="Build"
+          Condition="'$(SeedMapNativeRid)' != 'win-x64'">
+    <Error Text="RZeroF1.Minecraft.SeedMap currently supports only win-x64; received $(SeedMapNativeRid)." />
+  </Target>
+</Project>

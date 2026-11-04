@@ -1,0 +1,19 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. -->
+<!-- Copyright (c) 2026 RZeroF1. -->
+<!-- If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. -->
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\RZeroF1.Minecraft.SeedMap.Core\RZeroF1.Minecraft.SeedMap.Core.csproj" />
+  </ItemGroup>
+  <Target Name="CopySeedMapNativeForTests" AfterTargets="Build">
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\..\..\src\RZeroF1.Minecraft.SeedMap.Core\bin\$(Configuration)\net10.0\win-x64\rzero_seedmap.dll"
+          DestinationFolder="$(TargetDir)"
+          SkipUnchangedFiles="true" />
+  </Target>
+</Project>
