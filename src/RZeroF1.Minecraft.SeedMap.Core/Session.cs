@@ -10,7 +10,7 @@ namespace RZeroF1.Minecraft.SeedMap;
 /// Persistence boundary for workbench state. The core library does not choose an
 /// application-data directory; hosts may provide any storage implementation.
 /// </summary>
-public interface ISeedMapSessionStore
+public interface ISessionStore
 {
     string? Read();
     void Write(string json);
@@ -18,11 +18,11 @@ public interface ISeedMapSessionStore
 }
 
 /// <summary>Simple file-backed store suitable for desktop hosts.</summary>
-public sealed class FileSeedMapSessionStore : ISeedMapSessionStore
+public sealed class FileSessionStore : ISessionStore
 {
     public string FilePath { get; }
 
-    public FileSeedMapSessionStore(string filePath)
+    public FileSessionStore(string filePath)
     {
         if (string.IsNullOrWhiteSpace(filePath)) throw new ArgumentException("A session file path is required.", nameof(filePath));
         FilePath = Path.GetFullPath(filePath);
@@ -46,24 +46,24 @@ public sealed class FileSeedMapSessionStore : ISeedMapSessionStore
     }
 }
 
-public sealed class SeedMapSessionOptions
+public sealed class SessionOptions
 {
-    public ISeedMapSessionStore? Store { get; init; }
+    public ISessionStore? Store { get; init; }
     public Action<Exception>? Error { get; init; }
 }
 
 /// <summary>Lightweight state shared by one or more workbench controls.</summary>
-public sealed class SeedMapSession
+public sealed class Session
 {
-    private readonly ISeedMapSessionStore? _store;
+    private readonly ISessionStore? _store;
     private readonly Action<Exception>? _error;
     private bool _loaded;
 
-    public SeedMapWorkspace Workspace { get; private set; } = new();
-    public SeedMapProfile Profile { get; private set; } = new();
+    public Workspace Workspace { get; private set; } = new();
+    public Profile Profile { get; private set; } = new();
     public event Action<object?>? Changed;
 
-    public SeedMapSession(SeedMapSessionOptions? options = null)
+    public Session(SessionOptions? options = null)
     {
         _store = options?.Store;
         _error = options?.Error;
@@ -79,7 +79,7 @@ public sealed class SeedMapSession
             json = _store?.Read();
             if (!string.IsNullOrWhiteSpace(json))
             {
-                Workspace = JsonSerializer.Deserialize(json, SeedMapJsonContext.Default.SeedMapWorkspace)
+                Workspace = JsonSerializer.Deserialize(json, JsonContext.Default.Workspace)
                     ?? throw new InvalidDataException("地图配置为空。");
                 if (Workspace.SchemaVersion != 1) throw new InvalidDataException("不支持的地图配置版本。");
             }
@@ -104,10 +104,10 @@ public sealed class SeedMapSession
         Workspace.ActiveId = Profile.Id;
     }
 
-    private static void Normalize(SeedMapProfile profile)
+    private static void Normalize(Profile profile)
     {
-        profile.CenterX = SeedMap.ClampCoordinate(profile.CenterX);
-        profile.CenterZ = SeedMap.ClampCoordinate(profile.CenterZ);
+        profile.CenterX = Api.ClampCoordinate(profile.CenterX);
+        profile.CenterZ = Api.ClampCoordinate(profile.CenterZ);
         profile.PixelsPerBlock = Math.Clamp(
             double.IsFinite(profile.PixelsPerBlock) ? profile.PixelsPerBlock : 0.25,
             1.0 / 256,
@@ -116,12 +116,12 @@ public sealed class SeedMapSession
         profile.Biomes ??= new();
         profile.Structures ??= new();
         profile.Waypoints ??= new();
-        profile.Seed = SeedMap.ParseSeed(profile.SeedText);
+        profile.Seed = Api.ParseSeed(profile.SeedText);
     }
 
     public void Select(string seed, string version, int dimension, int y, object? source = null)
     {
-        long value = SeedMap.ParseSeed(seed);
+        long value = Api.ParseSeed(seed);
         var profile = Workspace.Profiles.FirstOrDefault(p =>
             p.Seed == value && p.Version == version && p.Dimension == dimension);
         if (profile is null)
@@ -151,7 +151,7 @@ public sealed class SeedMapSession
         Notify(source);
     }
 
-    public void Restore(SeedMapProfile profile, object? source = null)
+    public void Restore(Profile profile, object? source = null)
     {
         ArgumentNullException.ThrowIfNull(profile);
         Profile = profile;
@@ -167,11 +167,11 @@ public sealed class SeedMapSession
     public void Save()
     {
         if (_store is null) return;
-        _store.Write(JsonSerializer.Serialize(Workspace, SeedMapJsonContext.Default.SeedMapWorkspace));
+        _store.Write(JsonSerializer.Serialize(Workspace, JsonContext.Default.Workspace));
     }
 }
 
-[JsonSerializable(typeof(SeedMapWorkspace))]
-internal partial class SeedMapJsonContext : JsonSerializerContext
+[JsonSerializable(typeof(Workspace))]
+internal partial class JsonContext : JsonSerializerContext
 {
 }

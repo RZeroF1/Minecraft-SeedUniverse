@@ -4,46 +4,50 @@
 
 | API | 用途 |
 |---|---|
-| `SeedMap.Versions` | 查询 Native 实际支持的 Java 版本。 |
-| `SeedMap.Biomes(version, dimension)` | 查询群系 ID、key、中文名和颜色。 |
-| `SeedMap.Structures(version, dimension)` | 查询结构 ID、key、名称和区域大小。 |
-| `SeedMap.ParseSeed(text)` | 解析十进制 `long`；其他文本按 Java `String.hashCode()` 处理。 |
-| `SeedMap.Create(world)` / `SeedMap.Generate(...)` | 使用 SafeHandle 管理的 generator 直接生成群系 ID。 |
-| `SeedMap.QueryRegion(...)` / `SeedMap.Strongholds(...)` | 查询结构区域和要塞位置。 |
-| `SeedMap.IsSlimeChunk(...)` | 查询史莱姆区块。 |
+| `SeedMap.Api.Versions` | 查询 Native 实际支持的 Java 版本。 |
+| `SeedMap.Api.Biomes(version, dimension)` | 查询群系 ID、key、中文名和颜色。 |
+| `SeedMap.Api.Structures(version, dimension)` | 查询结构 ID、key、名称和区域大小。 |
+| `SeedMap.Api.ParseSeed(text)` | 解析十进制 `long`；其他文本按 Java `String.hashCode()` 处理。 |
+| `SeedMap.Api.Create(world)` / `SeedMap.Api.Generate(...)` | 使用 SafeHandle 管理的 generator 直接生成群系 ID。 |
+| `SeedMap.Api.QueryRegion(...)` / `SeedMap.Api.Strongholds(...)` | 查询结构区域和要塞位置。 |
+| `SeedMap.Api.IsSlimeChunk(...)` | 查询史莱姆区块。 |
 
 坐标使用 Minecraft block 坐标，边界为 `[-30_000_000, 30_000_000)`。`World`
-使用版本 ID、维度和固定 Y 高度；版本 ID 应来自 `SeedMap.Versions`。
+使用版本 ID、维度和固定 Y 高度；版本 ID 应来自 `SeedMap.Api.Versions`。
 
 ## 异步瓦片与搜索
 
 ```csharp
-using var engine = new SeedMapEngine(world);
+using SeedMap = RZeroF1.Minecraft.SeedMap;
+
+using var engine = new Engine(world);
 int[] tile = await engine.TileAsync(
-    new SeedMapEngine.TileKey(Step: 4, X: 0, Z: 0),
+    new Engine.TileKey(Step: 4, X: 0, Z: 0),
     cancellationToken);
 
 var result = await engine.QueryStructuresAsync(
     new SeedMap.Bounds(-2000, -2000, 2000, 2000),
-    SeedMap.Structures(world.Version, world.Dimension),
+    SeedMap.Api.Structures(world.Version, world.Dimension),
     cancellationToken);
 ```
 
-`SeedMapEngine` 提供固定大小瓦片、两个并发工作槽、取消、48 MiB LRU、结构区域
+`Engine` 提供固定大小瓦片、两个并发工作槽、取消、48 MiB LRU、结构区域
 缓存和 `FindBiomeAsync`。结构区域过多时返回 `Limited=true`，消费端应提示用户
 缩小范围或提高采样倍率。
 
 ## 相机和瓦片计划
 
 ```csharp
-var camera = new SeedMapCamera(centerX: 0, centerZ: 0, pixelsPerBlock: .25);
+using SeedMap = RZeroF1.Minecraft.SeedMap;
+
+var camera = new Camera(centerX: 0, centerZ: 0, pixelsPerBlock: .25);
 var bounds = camera.VisibleBounds(viewportWidth: 1200, viewportHeight: 760);
 camera.ZoomAt(1.25, anchorX: 600, anchorY: 380, 1200, 760);
 
 int step = camera.SelectSamplingStep();
-var visible = SeedMapTilePlanner.Visible(bounds, step);
-var wanted = SeedMapTilePlanner.WithPrefetch(bounds, step, rings: 1);
-var batch = SeedMapTilePlanner.OrderForLoading(
+var visible = TilePlanner.Visible(bounds, step);
+var wanted = TilePlanner.WithPrefetch(bounds, step, rings: 1);
+var batch = TilePlanner.OrderForLoading(
     wanted, visible, camera.CenterX, camera.CenterZ, maximum: 2);
 ```
 
@@ -53,29 +57,33 @@ var batch = SeedMapTilePlanner.OrderForLoading(
 ## 颜色、几何和 BGRA
 
 ```csharp
-var biomes = SeedMap.Biomes(world.Version, world.Dimension)
+using SeedMap = RZeroF1.Minecraft.SeedMap;
+
+var biomes = SeedMap.Api.Biomes(world.Version, world.Dimension)
     .ToDictionary(b => b.Id);
 var selected = new HashSet<int> { 1, 4, 5 };
-byte[] pixels = SeedMapPalette.ToBgra(
+byte[] pixels = Palette.ToBgra(
     tile, biomes, selected, hideUnselected: false, darkTheme: true);
 
-double distance = SeedMapGeometry.Distance(0, 0, 300, 400);
-SeedMap.Bounds chunk = SeedMapGeometry.ChunkBounds(10, -4);
+double distance = Geometry.Distance(0, 0, 300, 400);
+SeedMap.Bounds chunk = Geometry.ChunkBounds(10, -4);
 ```
 
 BGRA 缓冲区按行优先排列，每个像素四个字节，顺序为 B、G、R、A。颜色值采用
-`0xAARRGGBB`。`SeedMapGeometry.GridLines`、`Circle` 和 `ChunkBounds` 可用于
+`0xAARRGGBB`。`Geometry.GridLines`、`Circle` 和 `ChunkBounds` 可用于
 生成 Canvas、SVG、Skia 或其他渲染器使用的几何数据。
 
 ## 离屏导出
 
 ```csharp
-var image = await SeedMapExport.RenderAsync(
+using SeedMap = RZeroF1.Minecraft.SeedMap;
+
+var image = await Export.RenderAsync(
     world,
     new SeedMap.Bounds(-1024, -1024, 1024, 1024),
     step: 4,
     colors: palette,
-    profile: new SeedMapProfile { Seed = world.Seed },
+    profile: new Profile { Seed = world.Seed },
     cancellationToken);
 ```
 
@@ -84,5 +92,5 @@ var image = await SeedMapExport.RenderAsync(
 
 ## Session
 
-`SeedMapSession` 只定义通用 profile、历史、路径点和存储接口，不决定应用路径。
-宿主可以使用 `FileSeedMapSessionStore`，也可以实现数据库、云同步或内存存储。
+`Session` 只定义通用 profile、历史、路径点和存储接口，不决定应用路径。
+宿主可以使用 `FileSessionStore`，也可以实现数据库、云同步或内存存储。

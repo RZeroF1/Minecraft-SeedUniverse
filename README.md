@@ -21,7 +21,7 @@ rzero_seedmap.dll
 ## 当前能力
 
 - 包 ID：`RZeroF1.Minecraft.SeedMap`
-- 当前版本：`0.1.1`
+- 当前版本：`0.2.0`
 - 目标框架：`.NET 10`
 - 原生运行时：Windows `win-x64`
 - Minecraft Java：`1.16.5`、`1.17.1`、`1.18.2`、`1.19.2`、`1.19.4`、`1.20.6`、`1.21.1`、`1.21.3`
@@ -32,28 +32,28 @@ rzero_seedmap.dll
 ## 快速开始
 
 ```csharp
-using RZeroF1.Minecraft.SeedMap;
+using SeedMap = RZeroF1.Minecraft.SeedMap;
 
-var version = SeedMap.Versions.Single(v => v.Key == "1.20.6");
+var version = SeedMap.Api.Versions.Single(v => v.Key == "1.20.6");
 var world = new SeedMap.World(123, version.Id, 0, 64);
 
-using var engine = new SeedMapEngine(world);
+using var engine = new Engine(world);
 int[] ids = await engine.TileAsync(
-    new SeedMapEngine.TileKey(Step: 4, X: 0, Z: 0),
+    new Engine.TileKey(Step: 4, X: 0, Z: 0),
     cancellationToken);
 
-var biomes = SeedMap.Biomes(version.Id, world.Dimension)
+var biomes = SeedMap.Api.Biomes(version.Id, world.Dimension)
     .ToDictionary(b => b.Id);
-byte[] bgra = SeedMapPalette.ToBgra(ids, biomes);
+byte[] bgra = Palette.ToBgra(ids, biomes);
 ```
 
-每个异步任务使用独立的 Native generator；`SeedMapEngine` 提供两个并发工作槽、可取消请求和 48 MiB LRU 缓存。`SeedMapExport.RenderAsync` 可以在后台任务中生成有限尺寸的 BGRA8 图像缓冲区，消费端可以用自己的 PNG 编码器写出文件。
+每个异步任务使用独立的 Native generator；`Engine` 提供两个并发工作槽、可取消请求和 48 MiB LRU 缓存。`Export.RenderAsync` 可以在后台任务中生成有限尺寸的 BGRA8 图像缓冲区，消费端可以用自己的 PNG 编码器写出文件。
 
 ## 安装
 
 ```xml
 <PackageReference Include="RZeroF1.Minecraft.SeedMap"
-                  Version="0.1.1" />
+                  Version="0.2.0" />
 ```
 
 当前包只提供 `win-x64` 原生资产。应用应明确使用 Windows x64；x86、ARM64、其他操作系统、Minecraft Bedrock 和完整方块世界生成不在当前支持范围内。

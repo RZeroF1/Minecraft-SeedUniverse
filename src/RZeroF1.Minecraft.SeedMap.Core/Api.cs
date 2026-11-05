@@ -7,24 +7,24 @@ using Microsoft.Win32.SafeHandles;
 
 namespace RZeroF1.Minecraft.SeedMap;
 
+public sealed record VersionInfo(int Id, string Key, int Dimensions);
+public sealed record BiomeInfo(int Id, string Key, string Name, uint Color);
+public sealed record StructureInfo(int Id, string Key, string Name, int RegionBlocks);
+public readonly record struct World(long Seed, int Version, int Dimension, int Y);
+public readonly record struct Bounds(int MinX, int MinZ, int MaxX, int MaxZ)
+{
+    public bool Contains(int x, int z) => x >= MinX && x < MaxX && z >= MinZ && z < MaxZ;
+}
+public sealed record StructureHit(int Type, int X, int Z, int Flags);
+
 /// <summary>Typed, versioned Cubiomes ABI. Each worker owns its native generator.</summary>
-public static class SeedMap
+public static class Api
 {
     private const string Library = "rzero_seedmap";
     public const int WorldLimit = 30_000_000;
     public const int AbiVersion = 1;
     public const string Revision = "e61f90580cbdd883214a8054670dacae655e59c0";
     private static readonly Lazy<VersionInfo[]> Capabilities = new(Initialize);
-
-    public sealed record VersionInfo(int Id, string Key, int Dimensions);
-    public sealed record BiomeInfo(int Id, string Key, string Name, uint Color);
-    public sealed record StructureInfo(int Id, string Key, string Name, int RegionBlocks);
-    public readonly record struct World(long Seed, int Version, int Dimension, int Y);
-    public readonly record struct Bounds(int MinX, int MinZ, int MaxX, int MaxZ)
-    {
-        public bool Contains(int x, int z) => x >= MinX && x < MaxX && z >= MinZ && z < MaxZ;
-    }
-    public sealed record StructureHit(int Type, int X, int Z, int Flags);
 
     [StructLayout(LayoutKind.Sequential)]
     private struct NativeVersion { public int Id, Dimensions; public IntPtr Key; }
@@ -45,12 +45,6 @@ public static class SeedMap
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl), DefaultDllImportSearchPaths(DllImportSearchPath.AssemblyDirectory)] private static extern int cm_structure_region(Generator handle, int type, int rx, int rz, out NativeHit hit);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl), DefaultDllImportSearchPaths(DllImportSearchPath.AssemblyDirectory)] private static extern int cm_strongholds(Generator handle, [Out] NativeHit[] output, int capacity);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl), DefaultDllImportSearchPaths(DllImportSearchPath.AssemblyDirectory)] private static extern int cm_slime(ulong seed, int chunkX, int chunkZ);
-
-    public sealed class Generator : SafeHandleZeroOrMinusOneIsInvalid
-    {
-        internal Generator(IntPtr value) : base(true) => SetHandle(value);
-        protected override bool ReleaseHandle() { cm_destroy(handle); return true; }
-    }
 
     public static IReadOnlyList<VersionInfo> Versions => Capabilities.Value;
 
@@ -138,6 +132,8 @@ public static class SeedMap
         Check(result);
         return result != 0;
     }
+
+    internal static void Destroy(IntPtr handle) => cm_destroy(handle);
 
     private static void Check(int code)
     {
@@ -280,4 +276,15 @@ public static class SeedMap
         "end_barrens" => "末地荒地",
         _ => key.Replace('_', ' ')
     };
+}
+
+public sealed class Generator : SafeHandleZeroOrMinusOneIsInvalid
+{
+    internal Generator(IntPtr value) : base(true) => SetHandle(value);
+
+    protected override bool ReleaseHandle()
+    {
+        Api.Destroy(handle);
+        return true;
+    }
 }

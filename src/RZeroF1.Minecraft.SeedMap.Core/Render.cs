@@ -5,18 +5,18 @@
 namespace RZeroF1.Minecraft.SeedMap;
 
 /// <summary>A two-dimensional point in Minecraft block coordinates.</summary>
-public readonly record struct SeedMapPoint(double X, double Z);
+public readonly record struct Point(double X, double Z);
 
 /// <summary>A screen-space point used by render hosts without a UI framework dependency.</summary>
-public readonly record struct SeedMapScreenPoint(double X, double Y);
+public readonly record struct ScreenPoint(double X, double Y);
 
 /// <summary>A line segment in world or screen coordinates, depending on the caller.</summary>
-public readonly record struct SeedMapLine(SeedMapPoint Start, SeedMapPoint End);
+public readonly record struct Line(Point Start, Point End);
 
 /// <summary>
 /// Camera math shared by map hosts. It contains no XAML or platform types.
 /// </summary>
-public sealed class SeedMapCamera
+public sealed class Camera
 {
     public const double MinPixelsPerBlock = 1.0 / 256;
     public const double MaxPixelsPerBlock = 8;
@@ -25,38 +25,38 @@ public sealed class SeedMapCamera
     public double CenterZ { get; private set; }
     public double PixelsPerBlock { get; private set; }
 
-    public SeedMapCamera(double centerX = 0, double centerZ = 0, double pixelsPerBlock = .25)
+    public Camera(double centerX = 0, double centerZ = 0, double pixelsPerBlock = .25)
     {
-        CenterX = SeedMap.ClampCoordinate(centerX);
-        CenterZ = SeedMap.ClampCoordinate(centerZ);
+        CenterX = Api.ClampCoordinate(centerX);
+        CenterZ = Api.ClampCoordinate(centerZ);
         PixelsPerBlock = Math.Clamp(pixelsPerBlock, MinPixelsPerBlock, MaxPixelsPerBlock);
     }
 
-    public SeedMapPoint ScreenToWorld(double screenX, double screenY, double viewportWidth, double viewportHeight) =>
+    public Point ScreenToWorld(double screenX, double screenY, double viewportWidth, double viewportHeight) =>
         new(
             CenterX + (screenX - viewportWidth / 2) / PixelsPerBlock,
             CenterZ + (screenY - viewportHeight / 2) / PixelsPerBlock);
 
-    public SeedMapScreenPoint WorldToScreen(double x, double z, double viewportWidth, double viewportHeight) =>
+    public ScreenPoint WorldToScreen(double x, double z, double viewportWidth, double viewportHeight) =>
         new(
             (x - CenterX) * PixelsPerBlock + viewportWidth / 2,
             (z - CenterZ) * PixelsPerBlock + viewportHeight / 2);
 
-    public SeedMap.Bounds VisibleBounds(double viewportWidth, double viewportHeight)
+    public Bounds VisibleBounds(double viewportWidth, double viewportHeight)
     {
         var topLeft = ScreenToWorld(0, 0, viewportWidth, viewportHeight);
         var bottomRight = ScreenToWorld(viewportWidth, viewportHeight, viewportWidth, viewportHeight);
         return new(
-            (int)Math.Max(-SeedMap.WorldLimit, Math.Floor(topLeft.X)),
-            (int)Math.Max(-SeedMap.WorldLimit, Math.Floor(topLeft.Z)),
-            (int)Math.Min(SeedMap.WorldLimit, Math.Ceiling(bottomRight.X)),
-            (int)Math.Min(SeedMap.WorldLimit, Math.Ceiling(bottomRight.Z)));
+            (int)Math.Max(-Api.WorldLimit, Math.Floor(topLeft.X)),
+            (int)Math.Max(-Api.WorldLimit, Math.Floor(topLeft.Z)),
+            (int)Math.Min(Api.WorldLimit, Math.Ceiling(bottomRight.X)),
+            (int)Math.Min(Api.WorldLimit, Math.Ceiling(bottomRight.Z)));
     }
 
     public void MoveTo(double x, double z)
     {
-        CenterX = SeedMap.ClampCoordinate(x);
-        CenterZ = SeedMap.ClampCoordinate(z);
+        CenterX = Api.ClampCoordinate(x);
+        CenterZ = Api.ClampCoordinate(z);
     }
 
     /// <summary>Changes zoom while keeping the world point beneath the screen anchor fixed.</summary>
@@ -84,40 +84,40 @@ public sealed class SeedMapCamera
     }
 }
 
-/// <summary>Visible and prefetched tile planning for a <see cref="SeedMapEngine"/>.</summary>
-public static class SeedMapTilePlanner
+/// <summary>Visible and prefetched tile planning for a <see cref="Engine"/>.</summary>
+public static class TilePlanner
 {
-    public static IReadOnlySet<SeedMapEngine.TileKey> Visible(SeedMap.Bounds bounds, int step)
+    public static IReadOnlySet<Engine.TileKey> Visible(Bounds bounds, int step)
     {
         ValidateStep(step);
-        int span = checked(SeedMapEngine.TileSize * step);
-        var result = new HashSet<SeedMapEngine.TileKey>();
-        for (int z = SeedMap.FloorDiv(bounds.MinZ, span); z <= SeedMap.FloorDiv(bounds.MaxZ - 1, span); z++)
-            for (int x = SeedMap.FloorDiv(bounds.MinX, span); x <= SeedMap.FloorDiv(bounds.MaxX - 1, span); x++)
+        int span = checked(Engine.TileSize * step);
+        var result = new HashSet<Engine.TileKey>();
+        for (int z = Api.FloorDiv(bounds.MinZ, span); z <= Api.FloorDiv(bounds.MaxZ - 1, span); z++)
+            for (int x = Api.FloorDiv(bounds.MinX, span); x <= Api.FloorDiv(bounds.MaxX - 1, span); x++)
                 result.Add(new(step, x, z));
         return result;
     }
 
-    public static IReadOnlySet<SeedMapEngine.TileKey> WithPrefetch(
-        SeedMap.Bounds bounds, int step, int rings = 1)
+    public static IReadOnlySet<Engine.TileKey> WithPrefetch(
+        Bounds bounds, int step, int rings = 1)
     {
         ValidateStep(step);
         if (rings < 0) throw new ArgumentOutOfRangeException(nameof(rings));
-        int span = checked(SeedMapEngine.TileSize * step);
-        int minX = SeedMap.FloorDiv(Math.Max(-SeedMap.WorldLimit, bounds.MinX - rings * span), span);
-        int maxX = SeedMap.FloorDiv(Math.Min(SeedMap.WorldLimit - 1, bounds.MaxX - 1 + rings * span), span);
-        int minZ = SeedMap.FloorDiv(Math.Max(-SeedMap.WorldLimit, bounds.MinZ - rings * span), span);
-        int maxZ = SeedMap.FloorDiv(Math.Min(SeedMap.WorldLimit - 1, bounds.MaxZ - 1 + rings * span), span);
-        var result = new HashSet<SeedMapEngine.TileKey>();
+        int span = checked(Engine.TileSize * step);
+        int minX = Api.FloorDiv(Math.Max(-Api.WorldLimit, bounds.MinX - rings * span), span);
+        int maxX = Api.FloorDiv(Math.Min(Api.WorldLimit - 1, bounds.MaxX - 1 + rings * span), span);
+        int minZ = Api.FloorDiv(Math.Max(-Api.WorldLimit, bounds.MinZ - rings * span), span);
+        int maxZ = Api.FloorDiv(Math.Min(Api.WorldLimit - 1, bounds.MaxZ - 1 + rings * span), span);
+        var result = new HashSet<Engine.TileKey>();
         for (int z = minZ; z <= maxZ; z++)
             for (int x = minX; x <= maxX; x++)
                 result.Add(new(step, x, z));
         return result;
     }
 
-    public static IReadOnlyList<SeedMapEngine.TileKey> OrderForLoading(
-        IEnumerable<SeedMapEngine.TileKey> candidates,
-        IReadOnlySet<SeedMapEngine.TileKey> visible,
+    public static IReadOnlyList<Engine.TileKey> OrderForLoading(
+        IEnumerable<Engine.TileKey> candidates,
+        IReadOnlySet<Engine.TileKey> visible,
         double centerX,
         double centerZ,
         int maximum)
@@ -127,8 +127,8 @@ public static class SeedMapTilePlanner
             .OrderBy(key => visible.Contains(key) ? 0 : 1)
             .ThenBy(key =>
             {
-                double x = (key.X + .5) * SeedMapEngine.TileSize * key.Step;
-                double z = (key.Z + .5) * SeedMapEngine.TileSize * key.Step;
+                double x = (key.X + .5) * Engine.TileSize * key.Step;
+                double z = (key.Z + .5) * Engine.TileSize * key.Step;
                 return Math.Pow(x - centerX, 2) + Math.Pow(z - centerZ, 2);
             })
             .Take(maximum)
@@ -143,11 +143,11 @@ public static class SeedMapTilePlanner
 }
 
 /// <summary>Color and BGRA conversion helpers for map renderers.</summary>
-public static class SeedMapPalette
+public static class Palette
 {
     public static uint ResolveBiomeColor(
         int biomeId,
-        IReadOnlyDictionary<int, SeedMap.BiomeInfo> biomes,
+        IReadOnlyDictionary<int, BiomeInfo> biomes,
         IReadOnlySet<int>? selected = null,
         bool hideUnselected = false,
         bool darkTheme = false)
@@ -166,7 +166,7 @@ public static class SeedMapPalette
 
     public static byte[] ToBgra(
         ReadOnlySpan<int> biomeIds,
-        IReadOnlyDictionary<int, SeedMap.BiomeInfo> biomes,
+        IReadOnlyDictionary<int, BiomeInfo> biomes,
         IReadOnlySet<int>? selected = null,
         bool hideUnselected = false,
         bool darkTheme = false)
@@ -179,7 +179,7 @@ public static class SeedMapPalette
     public static void WriteBgra(
         ReadOnlySpan<int> biomeIds,
         Span<byte> destination,
-        IReadOnlyDictionary<int, SeedMap.BiomeInfo> biomes,
+        IReadOnlyDictionary<int, BiomeInfo> biomes,
         IReadOnlySet<int>? selected = null,
         bool hideUnselected = false,
         bool darkTheme = false)
@@ -204,30 +204,30 @@ public static class SeedMapPalette
 }
 
 /// <summary>Framework-neutral geometry helpers for map overlays and measurements.</summary>
-public static class SeedMapGeometry
+public static class Geometry
 {
     public static double Distance(double x1, double z1, double x2, double z2) =>
         Math.Sqrt(Math.Pow(x2 - x1, 2) + Math.Pow(z2 - z1, 2));
 
-    public static SeedMap.Bounds ChunkBounds(int chunkX, int chunkZ) =>
+    public static Bounds ChunkBounds(int chunkX, int chunkZ) =>
         new(checked(chunkX * 16), checked(chunkZ * 16), checked(chunkX * 16 + 16), checked(chunkZ * 16 + 16));
 
-    public static IEnumerable<SeedMapLine> GridLines(SeedMap.Bounds bounds, int spacing = 16)
+    public static IEnumerable<Line> GridLines(Bounds bounds, int spacing = 16)
     {
         if (spacing <= 0) throw new ArgumentOutOfRangeException(nameof(spacing));
-        int firstX = SeedMap.FloorDiv(bounds.MinX, spacing) * spacing;
-        int firstZ = SeedMap.FloorDiv(bounds.MinZ, spacing) * spacing;
+        int firstX = Api.FloorDiv(bounds.MinX, spacing) * spacing;
+        int firstZ = Api.FloorDiv(bounds.MinZ, spacing) * spacing;
         for (int x = firstX; x < bounds.MaxX; x += spacing)
             yield return new(new(x, bounds.MinZ), new(x, bounds.MaxZ));
         for (int z = firstZ; z < bounds.MaxZ; z += spacing)
             yield return new(new(bounds.MinX, z), new(bounds.MaxX, z));
     }
 
-    public static IReadOnlyList<SeedMapPoint> Circle(double centerX, double centerZ, double radius, int segments = 32)
+    public static IReadOnlyList<Point> Circle(double centerX, double centerZ, double radius, int segments = 32)
     {
         if (radius < 0) throw new ArgumentOutOfRangeException(nameof(radius));
         if (segments < 3) throw new ArgumentOutOfRangeException(nameof(segments));
-        var points = new SeedMapPoint[segments];
+        var points = new Point[segments];
         for (int i = 0; i < segments; i++)
         {
             double angle = Math.PI * 2 * i / segments;

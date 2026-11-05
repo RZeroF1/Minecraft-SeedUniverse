@@ -4,15 +4,15 @@
 namespace RZeroF1.Minecraft.SeedMap;
 
 /// <summary>Bounded offscreen rendering, shared coordinate/palette model, no XAML screenshot.</summary>
-public static class SeedMapExport
+public static class Export
 {
     public sealed record Image(int Width, int Height, byte[] Pixels, bool StructuresLimited = false);
 
-    public static async Task<Image> RenderAsync(SeedMap.World world, SeedMap.Bounds bounds, int step,
-        uint[] colors, SeedMapProfile profile, CancellationToken ct)
+    public static async Task<Image> RenderAsync(World world, Bounds bounds, int step,
+        uint[] colors, Profile profile, CancellationToken ct)
     {
         if (step is not (1 or 4 or 16 or 64 or 256)) throw new ArgumentOutOfRangeException(nameof(step));
-        int x0 = SeedMap.FloorDiv(bounds.MinX, step) * step, z0 = SeedMap.FloorDiv(bounds.MinZ, step) * step;
+        int x0 = Api.FloorDiv(bounds.MinX, step) * step, z0 = Api.FloorDiv(bounds.MinZ, step) * step;
         int width = (int)Math.Ceiling((bounds.MaxX - (double)x0) / step);
         int height = (int)Math.Ceiling((bounds.MaxZ - (double)z0) / step);
         if (width <= 0 || height <= 0 || (long)width * height > 16_777_216)
@@ -20,12 +20,12 @@ public static class SeedMapExport
         bool grid = profile.Grid, slime = profile.Slime && world.Dimension == 0;
         var markers = profile.Waypoints.Where(w => w.Dimension == world.Dimension).Select(w => (w.X, w.Z)).ToArray();
         var selected = profile.Structures.ToHashSet();
-        var types = SeedMap.Structures(world.Version, world.Dimension).Where(t => selected.Contains(t.Id)).ToArray();
-        using var structureEngine = new SeedMapEngine(world);
+        var types = Api.Structures(world.Version, world.Dimension).Where(t => selected.Contains(t.Id)).ToArray();
+        using var structureEngine = new Engine(world);
         var structures = await structureEngine.QueryStructuresAsync(bounds, types, ct).ConfigureAwait(false);
         return await Task.Run(() =>
         {
-            using var generator = SeedMap.Create(world);
+            using var generator = Api.Create(world);
             var pixels = new byte[checked(width * height * 4)];
             for (int tz = 0; tz < height; tz += 64)
                 for (int tx = 0; tx < width; tx += 128)
@@ -34,12 +34,12 @@ public static class SeedMapExport
                     int w = Math.Min(128, width - tx), h = Math.Min(64, height - tz);
                     int wx = x0 + tx * step, wz = z0 + tz * step;
                     // The Java world edge need not be aligned to a coarse sample grid.
-                    int left = Math.Max(0, (int)Math.Ceiling((-SeedMap.WorldLimit - (double)wx) / step));
-                    int top = Math.Max(0, (int)Math.Ceiling((-SeedMap.WorldLimit - (double)wz) / step));
-                    int right = Math.Min(w, (int)Math.Ceiling((SeedMap.WorldLimit - (double)wx) / step));
-                    int bottom = Math.Min(h, (int)Math.Ceiling((SeedMap.WorldLimit - (double)wz) / step));
+                    int left = Math.Max(0, (int)Math.Ceiling((-Api.WorldLimit - (double)wx) / step));
+                    int top = Math.Max(0, (int)Math.Ceiling((-Api.WorldLimit - (double)wz) / step));
+                    int right = Math.Min(w, (int)Math.Ceiling((Api.WorldLimit - (double)wx) / step));
+                    int bottom = Math.Min(h, (int)Math.Ceiling((Api.WorldLimit - (double)wz) / step));
                     int[]? ids = right > left && bottom > top
-                        ? SeedMap.Generate(generator, wx + left * step, wz + top * step, right - left, bottom - top, step, world.Y) : null;
+                        ? Api.Generate(generator, wx + left * step, wz + top * step, right - left, bottom - top, step, world.Y) : null;
                     for (int z = 0; z < h; z++)
                         for (int x = 0; x < w; x++)
                         {
@@ -47,8 +47,8 @@ public static class SeedMapExport
                                 ? ids[(z - top) * (right - left) + x - left] : -1;
                             uint c = id >= 0 && id < colors.Length ? colors[id] : 0xff555555;
                             int bx = wx + x * step, bz = wz + z * step;
-                            if (slime && step <= 4 && Math.Abs((long)bx) < SeedMap.WorldLimit && Math.Abs((long)bz) < SeedMap.WorldLimit &&
-                                SeedMap.IsSlimeChunk(world.Seed, SeedMap.FloorDiv(bx, 16), SeedMap.FloorDiv(bz, 16)))
+                            if (slime && step <= 4 && Math.Abs((long)bx) < Api.WorldLimit && Math.Abs((long)bz) < Api.WorldLimit &&
+                                Api.IsSlimeChunk(world.Seed, Api.FloorDiv(bx, 16), Api.FloorDiv(bz, 16)))
                                 c = Blend(c, 0xff50d050);
                             if (grid && step <= 4 && (bx % 16 == 0 || bz % 16 == 0)) c = Blend(c, 0xff303030);
                             int offset = ((tz + z) * width + tx + x) * 4;

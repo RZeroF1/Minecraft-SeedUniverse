@@ -3,14 +3,14 @@
 // If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
 namespace RZeroF1.Minecraft.SeedMap;
 
-public sealed class SeedMapWorkspace
+public sealed class Workspace
 {
     public int SchemaVersion { get; set; } = 1;
     public string ActiveId { get; set; } = "";
-    public List<SeedMapProfile> Profiles { get; set; } = new();
+    public List<Profile> Profiles { get; set; } = new();
 }
 
-public sealed class SeedMapProfile
+public sealed class Profile
 {
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
     public string SeedText { get; set; } = "123";
@@ -29,11 +29,11 @@ public sealed class SeedMapProfile
     public bool OnlySelectedStructures { get; set; }
     public List<int> Biomes { get; set; } = new();
     public List<int> Structures { get; set; } = new() { 5, 8, 9, 13, 100 };
-    public List<SeedMapWaypoint> Waypoints { get; set; } = new();
+    public List<Waypoint> Waypoints { get; set; } = new();
     public DateTime LastUsedUtc { get; set; } = DateTime.UtcNow;
 }
 
-public sealed class SeedMapWaypoint
+public sealed class Waypoint
 {
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
     public string Name { get; set; } = "路径点";
