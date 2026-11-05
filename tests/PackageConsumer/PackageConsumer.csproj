@@ -10,6 +10,6 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="RZeroF1.Minecraft.SeedMap" Version="0.1.0" />
+    <PackageReference Include="RZeroF1.Minecraft.SeedMap" Version="0.1.1" />
   </ItemGroup>
 </Project>

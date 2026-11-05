@@ -21,7 +21,7 @@ rzero_seedmap.dll
 ## 当前能力
 
 - 包 ID：`RZeroF1.Minecraft.SeedMap`
-- 当前版本：`0.1.0`
+- 当前版本：`0.1.1`
 - 目标框架：`.NET 10`
 - 原生运行时：Windows `win-x64`
 - Minecraft Java：`1.16.5`、`1.17.1`、`1.18.2`、`1.19.2`、`1.19.4`、`1.20.6`、`1.21.1`、`1.21.3`
@@ -53,7 +53,7 @@ byte[] bgra = SeedMapPalette.ToBgra(ids, biomes);
 
 ```xml
 <PackageReference Include="RZeroF1.Minecraft.SeedMap"
-                  Version="0.1.0" />
+                  Version="0.1.1" />
 ```
 
 当前包只提供 `win-x64` 原生资产。应用应明确使用 Windows x64；x86、ARM64、其他操作系统、Minecraft Bedrock 和完整方块世界生成不在当前支持范围内。

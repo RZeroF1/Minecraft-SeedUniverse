@@ -48,6 +48,14 @@ foreach (var v in SeedMap.Versions)
             Assert(SeedMap.Generate(g, -step * 8, step * 4, 8, 8, step, 64).All(id => id >= 0), "version/dimension/step");
     }
 Console.WriteLine("PASS all capability versions/dimensions/scales");
+foreach (var v in SeedMap.Versions)
+    foreach (int dim in new[] { -1, 0, 1 })
+    {
+        var biomes = SeedMap.Biomes(v.Id, dim);
+        Assert(biomes.All(b => !string.Equals(b.Name, b.Key.Replace('_', ' '), StringComparison.Ordinal)),
+            $"localized biome names {v.Key}/{dim}");
+    }
+Console.WriteLine("PASS localized biome names across all versions/dimensions");
 // Independent Java Random and signed int overflow implementation for slime chunks.
 static bool SlimeJava(long seed, int x, int z)
 {

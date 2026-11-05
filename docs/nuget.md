@@ -3,7 +3,7 @@
 ## 包信息
 
 - Package ID：`RZeroF1.Minecraft.SeedMap`
-- 版本：`0.1.0`
+- 版本：`0.1.1`
 - Target Framework：`net10.0`
 - 原生支持：`win-x64`
 - License：MPL-2.0；Cubiomes 上游保留 MIT
