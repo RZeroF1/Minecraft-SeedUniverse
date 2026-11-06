@@ -4,17 +4,17 @@
 
 namespace RZeroF1.Minecraft.SeedMap;
 
-/// <summary>A two-dimensional point in Minecraft block coordinates.</summary>
+/// <summary>以 Minecraft 方块为单位的二维世界坐标点。</summary>
 public readonly record struct Point(double X, double Z);
 
-/// <summary>A screen-space point used by render hosts without a UI framework dependency.</summary>
+/// <summary>供渲染宿主使用的屏幕坐标点，不依赖具体 UI 框架。</summary>
 public readonly record struct ScreenPoint(double X, double Y);
 
-/// <summary>A line segment in world or screen coordinates, depending on the caller.</summary>
+/// <summary>线段，坐标空间由调用方决定。</summary>
 public readonly record struct Line(Point Start, Point End);
 
 /// <summary>
-/// Camera math shared by map hosts. It contains no XAML or platform types.
+/// 供地图宿主复用的相机数学，不包含 XAML 或平台类型。
 /// </summary>
 public sealed class Camera
 {
@@ -59,7 +59,7 @@ public sealed class Camera
         CenterZ = Api.ClampCoordinate(z);
     }
 
-    /// <summary>Changes zoom while keeping the world point beneath the screen anchor fixed.</summary>
+    /// <summary>围绕屏幕锚点缩放；相机移动受世界边界限制。</summary>
     public void ZoomAt(double factor, double anchorX, double anchorY, double viewportWidth, double viewportHeight)
     {
         if (!double.IsFinite(factor) || factor <= 0)
@@ -84,7 +84,7 @@ public sealed class Camera
     }
 }
 
-/// <summary>Visible and prefetched tile planning for a <see cref="Engine"/>.</summary>
+/// <summary>为 <see cref="Engine"/> 规划可见瓦片、预取范围与加载顺序。</summary>
 public static class TilePlanner
 {
     public static IReadOnlySet<Engine.TileKey> Visible(Bounds bounds, int step)
@@ -142,7 +142,7 @@ public static class TilePlanner
     }
 }
 
-/// <summary>Color and BGRA conversion helpers for map renderers.</summary>
+/// <summary>为地图渲染提供颜色选择与 BGRA 转换。</summary>
 public static class Palette
 {
     public static uint ResolveBiomeColor(
@@ -203,7 +203,7 @@ public static class Palette
         (((first & 255) + (second & 255)) / 2);
 }
 
-/// <summary>Framework-neutral geometry helpers for map overlays and measurements.</summary>
+/// <summary>为地图叠加层和测量提供不依赖 UI 框架的几何计算。</summary>
 public static class Geometry
 {
     public static double Distance(double x1, double z1, double x2, double z2) =>

@@ -3,7 +3,7 @@
 // If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
 namespace RZeroF1.Minecraft.SeedMap;
 
-/// <summary>Per-viewport bounded data cache; no XAML objects or persistent native handles.</summary>
+/// <summary>为单个视口提供有容量上限的数据缓存，不持有 XAML 对象或长期存活的 Native 句柄。</summary>
 public sealed class Engine : IDisposable
 {
     public const int TileSize = 128;

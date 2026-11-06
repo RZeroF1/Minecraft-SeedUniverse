@@ -17,7 +17,7 @@ public readonly record struct Bounds(int MinX, int MinZ, int MaxX, int MaxZ)
 }
 public sealed record StructureHit(int Type, int X, int Z, int Flags);
 
-/// <summary>Typed, versioned Cubiomes ABI. Each worker owns its native generator.</summary>
+/// <summary>提供类型化、带版本校验的 Cubiomes ABI 调用；每个计算任务独占自己的 Native generator。</summary>
 public static class Api
 {
     private const string Library = "rzero_seedmap";

@@ -1,4 +1,4 @@
-name: SDK CI
+name: SDK 持续集成
 
 on:
   push:
@@ -11,20 +11,22 @@ permissions:
 
 jobs:
   validate:
-    name: Build, test and validate NuGet (win-x64)
+    name: 构建、测试与 NuGet 验证（win-x64）
     runs-on: windows-2025
     timeout-minutes: 25
 
     steps:
-      - name: Checkout
+      - name: 检出源码
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Setup .NET 10
+      - name: 配置 .NET 10
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
 
-      - name: Verify licenses and Cubiomes source hashes
+      - name: 校验许可证与 Cubiomes 源码哈希
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -68,19 +70,19 @@ jobs:
           }
           Write-Host "Verified $($entries.Count) Cubiomes source hashes and license files."
 
-      - name: Build SDK (Release, win-x64)
+      - name: 构建 SDK（Release，win-x64）
         shell: pwsh
         run: dotnet build src/RZeroF1.Minecraft.SeedMap.Core/RZeroF1.Minecraft.SeedMap.Core.csproj -c Release -r win-x64 -nologo
 
-      - name: Run core regression tests
+      - name: 运行核心回归测试
         shell: pwsh
         run: dotnet run --project tests/RZeroF1.Minecraft.SeedMap.Core.Tests/RZeroF1.Minecraft.SeedMap.Core.Tests.csproj -c Release -r win-x64
 
-      - name: Pack NuGet
+      - name: 打包 NuGet
         shell: pwsh
         run: dotnet pack src/RZeroF1.Minecraft.SeedMap.Core/RZeroF1.Minecraft.SeedMap.Core.csproj -c Release -r win-x64 --no-restore -nologo
 
-      - name: Inspect NuGet package and license metadata
+      - name: 检查随包文档、许可证与源码元数据
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -91,15 +93,36 @@ jobs:
             throw "Expected one NuGet package and one symbols package; found $($packages.Count) and $($symbols.Count)."
           }
 
+          foreach ($package in @($packages + $symbols)) {
+            $archive = [System.IO.Compression.ZipFile]::OpenRead($package.FullName)
+            try {
+              $forbidden = @($archive.Entries | Where-Object {
+                $_.FullName -match '(?i)do[ -]?not[ -]?submit|(^|[/\\])agents?\.md$'
+              })
+              if ($forbidden.Count -gt 0) {
+                throw "包中包含禁止发布的文件：$($forbidden.FullName -join ', ')"
+              }
+            }
+            finally { $archive.Dispose() }
+          }
+
           $zip = [System.IO.Compression.ZipFile]::OpenRead($packages[0].FullName)
           try {
             $entries = @($zip.Entries | ForEach-Object { $_.FullName.Replace('\', '/') })
             $required = @(
               'lib/net10.0/RZeroF1.Minecraft.SeedMap.dll',
+              'lib/net10.0/RZeroF1.Minecraft.SeedMap.xml',
               'runtimes/win-x64/native/rzero_seedmap.dll',
+              'README.md',
+              'README.en.md',
+              'docs/api.md',
+              'docs/architecture.md',
+              'docs/nuget.md',
               'LICENSE',
               'THIRD-PARTY-NOTICES.md',
-              'licenses/cubiomes/LICENSE'
+              'licenses/cubiomes/LICENSE',
+              'licenses/cubiomes/SOURCE.md',
+              'licenses/cubiomes/manifest.json'
             )
             foreach ($path in $required) {
               if ($path -notin $entries) { throw "NuGet package is missing: $path" }
@@ -111,26 +134,42 @@ jobs:
             finally { $reader.Dispose() }
 
             $id = $metadata.SelectSingleNode("//*[local-name()='metadata']/*[local-name()='id']")
+            $version = $metadata.SelectSingleNode("//*[local-name()='metadata']/*[local-name()='version']")
+            $projectUrl = $metadata.SelectSingleNode("//*[local-name()='metadata']/*[local-name()='projectUrl']")
+            $readme = $metadata.SelectSingleNode("//*[local-name()='metadata']/*[local-name()='readme']")
             $license = $metadata.SelectSingleNode("//*[local-name()='metadata']/*[local-name()='license']")
             $repository = $metadata.SelectSingleNode("//*[local-name()='metadata']/*[local-name()='repository']")
             if ($id.InnerText -ne 'RZeroF1.Minecraft.SeedMap') { throw 'Unexpected NuGet package ID.' }
             if ($license.InnerText -ne 'MPL-2.0') { throw 'Unexpected NuGet license expression.' }
-            if (-not $repository -or $repository.GetAttribute('commit') -ne $env:GITHUB_SHA) {
-              throw 'NuGet SourceLink commit does not match the checked-out Git commit.'
+            [xml] $project = Get-Content -LiteralPath src/RZeroF1.Minecraft.SeedMap.Core/RZeroF1.Minecraft.SeedMap.Core.csproj -Raw
+            $expectedVersion = $project.Project.PropertyGroup.PackageVersion | Where-Object { $_ }
+            if (-not $version -or $version.InnerText -ne $expectedVersion.InnerText) {
+              throw '包版本与项目版本不一致。'
             }
-            Write-Host "Validated $($packages[0].Name), SourceLink and native/license assets."
+            $expectedUrl = 'https://github.com/RZeroF1/WinUI-Minecraft-SeedMap'
+            if (-not $projectUrl -or $projectUrl.InnerText -ne $expectedUrl -or
+                -not $repository -or $repository.GetAttribute('url') -ne $expectedUrl) {
+              throw 'NuGet 项目或源码仓库地址不正确。'
+            }
+            if (-not $readme -or $readme.InnerText -ne 'README.md') {
+              throw 'NuGet 默认说明文档应为中文 README。'
+            }
+            if (-not $repository -or $repository.GetAttribute('commit') -ne $env:GITHUB_SHA) {
+              throw 'NuGet 仓库提交信息与当前检出的 Git 提交不一致。'
+            }
+            Write-Host "已验证 $($packages[0].Name) 的版本、文档、仓库提交及 Native 与许可证资产。"
           }
           finally { $zip.Dispose() }
 
-      - name: Restore consumer from locally built NuGet package
+      - name: 从本地产物还原独立包消费者
         shell: pwsh
-        run: dotnet restore tests/PackageConsumer/PackageConsumer.csproj -r win-x64 --configfile tests/PackageConsumer/NuGet.Config -p:NuGetAudit=false
+        run: dotnet restore tests/PackageConsumer/PackageConsumer.csproj -r win-x64 --configfile tests/PackageConsumer/NuGet.Config --packages artifacts/consumer-packages -p:NuGetAudit=false
 
-      - name: Run independent package consumer
+      - name: 运行独立包消费者
         shell: pwsh
         run: dotnet run --project tests/PackageConsumer/PackageConsumer.csproj -c Release -r win-x64 --no-restore
 
-      - name: Archive validated packages
+      - name: 归档已验证的包
         uses: actions/upload-artifact@v4
         with:
           name: seedmap-nuget-win-x64

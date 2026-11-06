@@ -1,14 +1,41 @@
-# NuGet 包
+# NuGet 与发布
+
+[项目首页](../README.md) · [API 说明](api.md) · [架构说明](architecture.md)
 
 ## 包信息
 
-- Package ID：`RZeroF1.Minecraft.SeedMap`
-- 版本：`0.2.0`
-- Target Framework：`net10.0`
-- 原生支持：`win-x64`
-- License：MPL-2.0；Cubiomes 上游保留 MIT
+| 项目 | 内容 |
+|---|---|
+| 包 ID | `RZeroF1.Minecraft.SeedMap` |
+| 当前源码版本 | `0.2.1` |
+| 目标框架 | `net10.0` |
+| 原生运行时 | `win-x64` |
+| 项目许可证 | MPL-2.0 |
+| Cubiomes 许可证 | MIT，保留 Cubitect 的版权声明 |
+| 源码仓库 | [RZeroF1/WinUI-Minecraft-SeedMap](https://github.com/RZeroF1/WinUI-Minecraft-SeedMap) |
 
-包只有一个托管程序集和一个原生运行时目录：
+NuGet 包的已发布版本以 [nuget.org](https://www.nuget.org/packages/RZeroF1.Minecraft.SeedMap) 为准，源码标签和更新说明见 [GitHub Releases](https://github.com/RZeroF1/WinUI-Minecraft-SeedMap/releases)。
+
+## 安装
+
+消费端使用 .NET 10 和 Windows x64，并固定包版本：
+
+```xml
+<PropertyGroup>
+  <TargetFramework>net10.0</TargetFramework>
+  <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+</PropertyGroup>
+
+<ItemGroup>
+  <PackageReference Include="RZeroF1.Minecraft.SeedMap" Version="0.2.1" />
+</ItemGroup>
+```
+
+尚未发布的源码版本可使用本地打包流程验证。使用已发布包不需要安装 Visual Studio C++ Build Tools。
+
+## 包内容
+
+包中包含托管程序集、XML API 注释、Windows x64 原生后端、中英文 README、中文使用文档和英文许可证与来源信息：
 
 ```text
 lib/net10.0/
@@ -17,34 +44,50 @@ lib/net10.0/
 runtimes/win-x64/native/
     rzero_seedmap.dll
 README.md
+README.en.md
 docs/
+    api.md
+    architecture.md
+    nuget.md
 LICENSE
 THIRD-PARTY-NOTICES.md
 licenses/cubiomes/
+    LICENSE
+    SOURCE.md
+    manifest.json
 ```
 
-## 本地打包
+`.snupkg` 另行提供 Portable PDB 和 SourceLink 信息。公开文档按明确文件清单打包；新增使用文档时同步更新项目文件和 CI 中的产物检查。
+
+## 本地构建与打包
+
+源码构建需要 Windows、.NET 10 SDK 和 Visual Studio C++ Build Tools。在仓库根目录执行：
 
 ```powershell
 dotnet build src/RZeroF1.Minecraft.SeedMap.Core/RZeroF1.Minecraft.SeedMap.Core.csproj -c Release -r win-x64
+dotnet run --project tests/RZeroF1.Minecraft.SeedMap.Core.Tests/RZeroF1.Minecraft.SeedMap.Core.Tests.csproj -c Release -r win-x64
 dotnet pack src/RZeroF1.Minecraft.SeedMap.Core/RZeroF1.Minecraft.SeedMap.Core.csproj -c Release -r win-x64
 ```
 
-包输出到 `artifacts/packages`。打包项目在收到 `win-x86` 或 `win-arm64` 时会显式
-失败；这是因为当前包没有这些平台的 Native 资产。
+包输出到 `artifacts/packages/`。构建过程调用本地 Native 构建脚本，使用固定的 Cubiomes 源码；指定 `win-x86`、`win-arm64` 或其他运行时会失败。
 
-## 包消费验证
+## 独立包消费验证
 
-`tests/PackageConsumer` 的 `NuGet.Config` 先读取 `../../artifacts/packages`，再读取
-nuget.org。项目只使用 `PackageReference`，没有 `ProjectReference`：
+`tests/PackageConsumer` 只使用 `PackageReference`，通过真实 `.nupkg` 加载托管程序集与 Native DLL。其 `NuGet.Config` 包含本地产物目录和 nuget.org。使用独立缓存并指定配置文件还原，确保首次验证读取本次生成的本地版本：
 
 ```powershell
-dotnet run --project tests/PackageConsumer/PackageConsumer.csproj -c Release -r win-x64
+dotnet restore tests/PackageConsumer/PackageConsumer.csproj -r win-x64 --configfile tests/PackageConsumer/NuGet.Config --packages artifacts/consumer-packages -p:NuGetAudit=false
+dotnet run --project tests/PackageConsumer/PackageConsumer.csproj -c Release -r win-x64 --no-restore
 ```
 
-该程序会从真实 `.nupkg` 加载托管程序集和 `rzero_seedmap.dll`，验证瓦片、结构、相机和 BGRA API。
+程序验证瓦片、结构查询、相机、BGRA 转换与 Native 修订号。重复打包同一版本进行本地开发验证时，应换用新的缓存目录；准备发布的产物则从最终提交重新构建。
 
-## 发布说明
+## 发布流程
 
-公开发布前应把 `.nupkg` 上传到协作者和 CI 都能访问的稳定源，并在下游项目中固定
-预览版本。当前本地构建验证已完成，公开 NuGet 源发布仍需要单独的凭据和发布操作。
+1. 同步项目版本、包消费者、中英文 README、使用文档和包更新说明，完成构建与测试后提交源码。
+2. 从最终提交的干净源码重新构建 `.nupkg` 和 `.snupkg`，核对版本、文档、Native 资产、许可证、仓库地址，以及 `.nuspec` 和 PDB SourceLink 中记录的提交 SHA。
+3. 运行独立包消费者，确认实际包还原和 Native DLL 加载成功。仓库 CI 会检查包内容、版本、仓库元数据和当前提交的一致性。
+4. 获得发布授权后，将已验证的产物上传到 NuGet，为同一提交创建版本标签和 GitHub Release，并附上对应产物。
+5. 发布后从 NuGet 下载实际包，重新核对包内容与提交信息，并检查 GitHub 标签、Release 和 NuGet 页面。
+
+已发布包使用唯一版本号，后续更新递增版本。更新说明面向使用者描述实际变化，构建、测试和包校验结果记录在提交或 PR 中。

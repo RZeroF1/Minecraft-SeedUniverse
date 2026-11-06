@@ -3,7 +3,7 @@
 // If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
 namespace RZeroF1.Minecraft.SeedMap;
 
-/// <summary>Bounded offscreen rendering, shared coordinate/palette model, no XAML screenshot.</summary>
+/// <summary>使用共享坐标与颜色模型生成有尺寸上限的离屏像素缓冲区。</summary>
 public static class Export
 {
     public sealed record Image(int Width, int Height, byte[] Pixels, bool StructuresLimited = false);

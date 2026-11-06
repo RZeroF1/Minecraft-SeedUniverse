@@ -1,96 +1,123 @@
 # API 说明
 
-## 世界与 Native 能力
+[项目首页](../README.md) · [架构说明](architecture.md) · [NuGet 与发布](nuget.md)
+
+本文面向 `0.2.1` API，与 `0.2.0` 的公共调用方式一致。示例采用 `using SeedMap = RZeroF1.Minecraft.SeedMap;` 别名，所有 SDK 类型均通过 `SeedMap.` 访问，可用于启用隐式 `using` 的 .NET 10 项目。
+
+## 世界与能力查询
+
+```csharp
+using SeedMap = RZeroF1.Minecraft.SeedMap;
+
+var version = SeedMap.Api.Versions.Single(v => v.Key == "1.20.6");
+var world = new SeedMap.World(
+    Seed: SeedMap.Api.ParseSeed("123"),
+    Version: version.Id,
+    Dimension: 0,
+    Y: 64);
+var cancellationToken = CancellationToken.None;
+```
+
+后续代码段接续以上的 `world` 和 `cancellationToken`。版本 ID 来自 `Api.Versions`，维度使用主世界 `0`、下界 `-1`、末地 `1`，`Y` 表示采样高度。世界坐标以方块为单位，范围为 `[-30_000_000, 30_000_000)`；`Bounds` 包含最小边界，不包含最大边界。
 
 | API | 用途 |
 |---|---|
 | `SeedMap.Api.Versions` | 查询 Native 实际支持的 Java 版本。 |
-| `SeedMap.Api.Biomes(version, dimension)` | 查询群系 ID、key、中文名和颜色。 |
-| `SeedMap.Api.Structures(version, dimension)` | 查询结构 ID、key、名称和区域大小。 |
-| `SeedMap.Api.ParseSeed(text)` | 解析十进制 `long`；其他文本按 Java `String.hashCode()` 处理。 |
-| `SeedMap.Api.Create(world)` / `SeedMap.Api.Generate(...)` | 使用 SafeHandle 管理的 generator 直接生成群系 ID。 |
-| `SeedMap.Api.QueryRegion(...)` / `SeedMap.Api.Strongholds(...)` | 查询结构区域和要塞位置。 |
-| `SeedMap.Api.IsSlimeChunk(...)` | 查询史莱姆区块。 |
+| `SeedMap.Api.Biomes(version, dimension)` | 查询群系 ID、英文键名、中文名和颜色。 |
+| `SeedMap.Api.Structures(version, dimension)` | 查询结构 ID、英文键名、名称和区域大小。 |
+| `SeedMap.Api.ParseSeed(text)` | 去除首尾空白后解析十进制 `long`，其他非空文本按 Java `String.hashCode()` 计算。 |
+| `SeedMap.Api.Create(world)` | 创建由 `SafeHandle` 管理的 Native generator，使用后释放。 |
+| `SeedMap.Api.Generate(...)` | 同步生成指定矩形范围的群系 ID。 |
+| `SeedMap.Api.QueryRegion(...)` | 查询指定结构区域，未找到时返回 `null`。 |
+| `SeedMap.Api.Strongholds(...)` | 查询要塞位置。 |
+| `SeedMap.Api.IsSlimeChunk(seed, chunkX, chunkZ)` | 按区块坐标查询史莱姆区块。 |
 
-坐标使用 Minecraft block 坐标，边界为 `[-30_000_000, 30_000_000)`。`World`
-使用版本 ID、维度和固定 Y 高度；版本 ID 应来自 `SeedMap.Api.Versions`。
-
-## 异步瓦片与搜索
+## 同步群系采样
 
 ```csharp
-using SeedMap = RZeroF1.Minecraft.SeedMap;
-
-using var engine = new Engine(world);
-int[] tile = await engine.TileAsync(
-    new Engine.TileKey(Step: 4, X: 0, Z: 0),
-    cancellationToken);
-
-var result = await engine.QueryStructuresAsync(
-    new SeedMap.Bounds(-2000, -2000, 2000, 2000),
-    SeedMap.Api.Structures(world.Version, world.Dimension),
-    cancellationToken);
+using var generator = SeedMap.Api.Create(world);
+int[] samples = SeedMap.Api.Generate(
+    generator, x: -64, z: -64, width: 32, height: 32, step: 4, y: world.Y);
 ```
 
-`Engine` 提供固定大小瓦片、两个并发工作槽、取消、48 MiB LRU、结构区域
-缓存和 `FindBiomeAsync`。结构区域过多时返回 `Limited=true`，消费端应提示用户
-缩小范围或提高采样倍率。
+`width`、`height` 是样本数量，`step` 是相邻样本间隔的方块数，可取 `1`、`4`、`16`、`64`、`256`。返回数组按行排列，索引为 `row * width + column`。同一个 generator 应由单个计算任务独占。
 
-## 相机和瓦片计划
+## 异步瓦片、结构与搜索
 
 ```csharp
-using SeedMap = RZeroF1.Minecraft.SeedMap;
+using var engine = new SeedMap.Engine(world);
+int[] tile = await engine.TileAsync(
+    new SeedMap.Engine.TileKey(Step: 4, X: 0, Z: 0),
+    cancellationToken);
 
-var camera = new Camera(centerX: 0, centerZ: 0, pixelsPerBlock: .25);
+var villages = SeedMap.Api.Structures(world.Version, world.Dimension)
+    .Where(type => type.Key == "village")
+    .ToArray();
+var structures = await engine.QueryStructuresAsync(
+    new SeedMap.Bounds(-2000, -2000, 2000, 2000),
+    villages,
+    cancellationToken);
+
+int targetBiome = tile[0];
+var location = await engine.FindBiomeAsync(
+    targetBiome, centerX: 0, centerZ: 0, radius: 1024, ct: cancellationToken);
+```
+
+`Engine` 返回 `128 × 128` 群系 ID 瓦片，起点为 `(TileKey.X * 128 * Step, TileKey.Z * 128 * Step)`，负坐标同样按瓦片网格处理。引擎提供两个并发工作槽、取消、48 MiB LRU 瓦片缓存和结构区域缓存。缓存命中可能返回同一数组实例，消费端应只读使用；需要修改时先复制数组。
+
+`QueryStructuresAsync` 返回 `Hits` 和 `Limited`。当某类结构的候选区域过多时，该类查询会被跳过并设置 `Limited=true`，消费端可以缩小查询范围或减少结构类型。`FindBiomeAsync` 按 32 方块网格向外搜索，并按单方块采样确认命中位置；它可能遗漏较小群系，返回 `null` 表示此次采样未找到结果。
+
+释放 `Engine` 会取消其生命周期内仍在执行的工作并清空缓存。调用方应等待或处理已有任务的取消结果，再结束自己的视口或会话。
+
+## 相机与瓦片计划
+
+```csharp
+var camera = new SeedMap.Camera(centerX: 0, centerZ: 0, pixelsPerBlock: .25);
+camera.ZoomAt(1.25, anchorX: 600, anchorY: 380, viewportWidth: 1200, viewportHeight: 760);
 var bounds = camera.VisibleBounds(viewportWidth: 1200, viewportHeight: 760);
-camera.ZoomAt(1.25, anchorX: 600, anchorY: 380, 1200, 760);
 
 int step = camera.SelectSamplingStep();
-var visible = TilePlanner.Visible(bounds, step);
-var wanted = TilePlanner.WithPrefetch(bounds, step, rings: 1);
-var batch = TilePlanner.OrderForLoading(
+var visible = SeedMap.TilePlanner.Visible(bounds, step);
+var wanted = SeedMap.TilePlanner.WithPrefetch(bounds, step, rings: 1);
+var batch = SeedMap.TilePlanner.OrderForLoading(
     wanted, visible, camera.CenterX, camera.CenterZ, maximum: 2);
 ```
 
-`ZoomAt` 保持鼠标锚点下的世界坐标不变。`SelectSamplingStep` 返回
-`1/4/16/64/256`。消费端负责把计划接到自己的任务生命周期和图像对象。
+`ScreenToWorld` 和 `WorldToScreen` 在屏幕与世界坐标之间转换。`ZoomAt` 围绕屏幕锚点缩放；世界边界钳制可能限制相机移动。`SelectSamplingStep` 返回 `1`、`4`、`16`、`64`、`256` 中的一个值。瓦片计划优先安排可见瓦片，再按距视野中心的距离排序；消费端负责调度任务和创建图像对象。
 
-## 颜色、几何和 BGRA
+## 颜色、几何与 BGRA
 
 ```csharp
-using SeedMap = RZeroF1.Minecraft.SeedMap;
-
 var biomes = SeedMap.Api.Biomes(world.Version, world.Dimension)
-    .ToDictionary(b => b.Id);
+    .ToDictionary(biome => biome.Id);
 var selected = new HashSet<int> { 1, 4, 5 };
-byte[] pixels = Palette.ToBgra(
+byte[] pixels = SeedMap.Palette.ToBgra(
     tile, biomes, selected, hideUnselected: false, darkTheme: true);
 
-double distance = Geometry.Distance(0, 0, 300, 400);
-SeedMap.Bounds chunk = Geometry.ChunkBounds(10, -4);
+double distance = SeedMap.Geometry.Distance(0, 0, 300, 400);
+SeedMap.Bounds chunk = SeedMap.Geometry.ChunkBounds(10, -4);
 ```
 
-BGRA 缓冲区按行优先排列，每个像素四个字节，顺序为 B、G、R、A。颜色值采用
-`0xAARRGGBB`。`Geometry.GridLines`、`Circle` 和 `ChunkBounds` 可用于
-生成 Canvas、SVG、Skia 或其他渲染器使用的几何数据。
+BGRA 缓冲区按行排列，每个像素四个字节，顺序为 B、G、R、A，当前转换结果的 Alpha 为 `255`。颜色值采用 `0xAARRGGBB`。`Palette.WriteBgra` 可以写入调用方提供的缓冲区；`Geometry.GridLines`、`Circle` 和 `ChunkBounds` 提供叠加层与测量所需的几何数据。
 
 ## 离屏导出
 
 ```csharp
-using SeedMap = RZeroF1.Minecraft.SeedMap;
-
-var image = await Export.RenderAsync(
+uint[] colors = Enumerable.Range(0, 256)
+    .Select(id => SeedMap.Palette.ResolveBiomeColor(id, biomes))
+    .ToArray();
+var profile = new SeedMap.Profile { Seed = world.Seed };
+var image = await SeedMap.Export.RenderAsync(
     world,
     new SeedMap.Bounds(-1024, -1024, 1024, 1024),
     step: 4,
-    colors: palette,
-    profile: new Profile { Seed = world.Seed },
-    cancellationToken);
+    colors: colors,
+    profile: profile,
+    ct: cancellationToken);
 ```
 
-`Image.Pixels` 是 BGRA8；单次导出最多 16,777,216 像素。`StructuresLimited` 表示
-结构密集区域有部分查询因工作量上限被省略，像素本身仍是有效的群系结果。
+`Export.Image.Pixels` 是 BGRA8 缓冲区，尺寸由 `Width`、`Height` 给出，单次导出最多 `16_777_216` 像素。输出起点按采样步长向下对齐。`Profile` 提供网格、史莱姆区块、结构选择和路径点；`StructuresLimited` 表示部分结构查询因工作量上限被跳过。消费端负责将像素编码为 PNG 等文件格式。
 
-## Session
+## 会话与存储
 
-`Session` 只定义通用 profile、历史、路径点和存储接口，不决定应用路径。
-宿主可以使用 `FileSessionStore`，也可以实现数据库、云同步或内存存储。
+`Session` 管理 `Workspace`、`Profile`、历史和路径点。应用先调用 `Load()`，通过 `Select()` 选择世界，通过 `Notify()` 通知配置变更，再按需要调用 `Save()`。SDK 不决定应用数据目录，宿主可提供 `FileSessionStore`，也可实现 `ISessionStore` 接入数据库、云同步或内存存储。

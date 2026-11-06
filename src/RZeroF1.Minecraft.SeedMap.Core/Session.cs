@@ -7,8 +7,7 @@ using System.Text.Json.Serialization;
 namespace RZeroF1.Minecraft.SeedMap;
 
 /// <summary>
-/// Persistence boundary for workbench state. The core library does not choose an
-/// application-data directory; hosts may provide any storage implementation.
+/// 定义会话状态的持久化接口，应用数据路径与存储实现由宿主指定。
 /// </summary>
 public interface ISessionStore
 {
@@ -17,7 +16,7 @@ public interface ISessionStore
     void BackupInvalid(string json, DateTimeOffset timestamp);
 }
 
-/// <summary>Simple file-backed store suitable for desktop hosts.</summary>
+/// <summary>适用于桌面宿主的文件存储实现。</summary>
 public sealed class FileSessionStore : ISessionStore
 {
     public string FilePath { get; }
@@ -52,7 +51,7 @@ public sealed class SessionOptions
     public Action<Exception>? Error { get; init; }
 }
 
-/// <summary>Lightweight state shared by one or more workbench controls.</summary>
+/// <summary>供一个或多个宿主控件共享的轻量会话状态。</summary>
 public sealed class Session
 {
     private readonly ISessionStore? _store;

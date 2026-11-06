@@ -9,7 +9,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IsPackable>true</IsPackable>
     <PackageId>RZeroF1.Minecraft.SeedMap</PackageId>
-    <PackageVersion Condition="'$(PackageVersion)' == ''">0.2.0</PackageVersion>
+    <PackageVersion Condition="'$(PackageVersion)' == ''">0.2.1</PackageVersion>
     <Version Condition="'$(Version)' == ''">$(PackageVersion)</Version>
     <Authors>RZeroF1</Authors>
     <Description>面向 Minecraft Java 世界计算、地图瓦片、结构查询与离屏渲染的纯能力 SeedMap SDK。</Description>
@@ -18,9 +18,9 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>MPL-2.0</PackageLicenseExpression>
     <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://github.com/RZeroF1/WinUI3-Minecraft-SeedMap</RepositoryUrl>
-    <PackageProjectUrl>https://github.com/RZeroF1/WinUI3-Minecraft-SeedMap</PackageProjectUrl>
-    <PackageReleaseNotes>重构 SeedMap .NET 公共 API，统一使用 Api、Engine、Camera、Geometry、Palette、TilePlanner 和 Export 等命名；保持 Native ABI、世界计算、地图瓦片、结构查询、导出及群系中文名称修复；包含 win-x64 Cubiomes 原生后端。</PackageReleaseNotes>
+    <RepositoryUrl>https://github.com/RZeroF1/WinUI-Minecraft-SeedMap</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/RZeroF1/WinUI-Minecraft-SeedMap</PackageProjectUrl>
+    <PackageReleaseNotes>整理中文 API、架构与 NuGet 使用文档，新增英文 README 和语言切换入口，统一中文 XML API 注释并同步随包文档；延续 0.2.0 公共 API 与世界计算行为。</PackageReleaseNotes>
     <PackageOutputPath>$(RepositoryRoot)\artifacts\packages\</PackageOutputPath>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
@@ -34,9 +34,11 @@
 
   <ItemGroup>
     <None Include="$(RepositoryRoot)\README.md" Pack="true" PackagePath="" />
+    <None Include="$(RepositoryRoot)\README.en.md" Pack="true" PackagePath="" />
     <None Include="$(RepositoryRoot)\LICENSE" Pack="true" PackagePath="" />
     <None Include="$(RepositoryRoot)\THIRD-PARTY-NOTICES.md" Pack="true" PackagePath="" />
-    <None Include="$(RepositoryRoot)\docs\**\*" Pack="true" PackagePath="docs" />
+    <None Include="$(RepositoryRoot)\docs\api.md;$(RepositoryRoot)\docs\architecture.md;$(RepositoryRoot)\docs\nuget.md"
+          Pack="true" PackagePath="docs" />
     <None Include="$(RepositoryRoot)\licenses\cubiomes\LICENSE" Pack="true" PackagePath="licenses\cubiomes" />
     <None Include="$(RepositoryRoot)\licenses\cubiomes\SOURCE.md" Pack="true" PackagePath="licenses\cubiomes" />
     <None Include="$(RepositoryRoot)\licenses\cubiomes\manifest.json" Pack="true" PackagePath="licenses\cubiomes" />
