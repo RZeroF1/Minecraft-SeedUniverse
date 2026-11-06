@@ -20,7 +20,7 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/RZeroF1/WinUI-Minecraft-SeedMap</RepositoryUrl>
     <PackageProjectUrl>https://github.com/RZeroF1/WinUI-Minecraft-SeedMap</PackageProjectUrl>
-    <PackageReleaseNotes>整理中文 API、架构与 NuGet 使用文档，新增英文 README 和语言切换入口，统一中文 XML API 注释并同步随包文档；延续 0.2.0 公共 API 与世界计算行为。</PackageReleaseNotes>
+    <PackageReleaseNotes>新增版本到 Native Profile 的能力目录，接入 1.13.2、1.14.4、1.15.2、1.16.1、1.21.5 和实验性 1.21.11；保留现有正式版本并标注群系、结构、维度和验证状态；同步 PR #162 的 Cubiomes 1.21.5 profile、中文 API、架构与 NuGet 文档。</PackageReleaseNotes>
     <PackageOutputPath>$(RepositoryRoot)\artifacts\packages\</PackageOutputPath>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>

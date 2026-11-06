@@ -10,7 +10,7 @@ SeedMap 面向 .NET 10 消费端提供可复用的数据、计算、几何和图
 消费端应用
   ├─ UI 状态、输入、图像对象、动画和窗口生命周期
   └─ RZeroF1.Minecraft.SeedMap
-       ├─ Api：Native ABI、SafeHandle、能力表和同步计算
+       ├─ Api：Native ABI、SafeHandle、版本 Profile 能力表和同步计算
        ├─ Engine：异步瓦片、取消、结构区域查询、附近群系搜索、LRU
        ├─ Camera：屏幕与世界坐标、视野、锚点缩放和采样步长
        ├─ TilePlanner：可见瓦片、预取范围和加载优先级
@@ -30,7 +30,7 @@ SeedMap 面向 .NET 10 消费端提供可复用的数据、计算、几何和图
 
 ## Native 调用与资源
 
-`native/cubiomes/seedmap.c` 和 `seedmap.h` 定义 C ABI 适配层，固定版本的 Cubiomes 源码位于 `native/cubiomes/upstream/`。托管层首次读取能力表时验证 ABI 版本与 Cubiomes 修订号，不匹配时抛出异常。
+`native/cubiomes/seedmap.c` 和 `seedmap.h` 定义 C ABI 适配层，固定版本的 Cubiomes 源码位于 `native/cubiomes/upstream/`。托管层首次读取能力表时验证 ABI 版本与 Cubiomes 修订号，不匹配时抛出异常。发行版本通过 `VersionCapability` 映射到可复用的 Biome/Structure profile；多个发行版本可以共享一个 profile，但能力状态和验证记录仍按发行版本保存。
 
 每个 Native generator 由 `SafeHandle` 管理，并由一个计算任务独占。同步调用方通过 `using` 释放 generator；异步任务在后台计算中创建并释放自己的 generator。Native DLL 通过 `DllImportSearchPath.AssemblyDirectory` 加载。
 

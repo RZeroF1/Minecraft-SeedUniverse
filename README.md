@@ -20,10 +20,11 @@ SDK 提供数据、计算和图像缓冲区。消费端可以使用 WinUI、WPF�
 - 当前源码版本：`0.2.1`
 - 目标框架：`.NET 10`
 - 原生运行时：Windows `win-x64`
-- Minecraft Java：`1.16.5`、`1.17.1`、`1.18.2`、`1.19.2`、`1.19.4`、`1.20.6`、`1.21.1`、`1.21.3`
+- Minecraft Java 发行版本目录：覆盖 `1.13.2`–`1.21.11` 的 43 个发行版本条目，底层复用 14 个唯一算法 Profiles
+- 版本状态：`1.16.5`–`1.21.3` 为现有正式 Native profiles；`1.13.2`–`1.16.1` 及其补丁别名为 Native smoke/实验性 profiles；`1.21.5` 已完成群系 JAR 对照但结构仍为实验性；`1.21.11` 尚未完成游戏 oracle
 - 维度：主世界 `0`、下界 `-1`、末地 `1`
 - 采样步长：`1`、`4`、`16`、`64`、`256` 个方块
-- Cubiomes 修订版：`e61f90580cbdd883214a8054670dacae655e59c0`
+- Cubiomes 修订版：基于 `e61f90580cbdd883214a8054670dacae655e59c0`，应用 PR #162 `ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2`
 
 ```text
 消费端 UI / 图像框架
@@ -82,7 +83,7 @@ Console.WriteLine($"{SeedMap.Engine.TileSize} × {SeedMap.Engine.TileSize}, {bgr
 
 ## 支持范围
 
-当前包提供 Windows x64 原生资产，面向原版 Minecraft Java 世界计算。结构结果采用 Cubiomes 的位置预测和适用性检查；自定义世界生成、Minecraft Bedrock、混合版本存档和完整方块世界生成不在当前支持范围内。
+当前包提供 Windows x64 原生资产，面向原版 Minecraft Java 世界计算。版本选择和功能状态可通过 `Api.VersionCapabilities` 查询；结构结果采用 Cubiomes 的位置预测和适用性检查，实验性版本不会被当作完整结构支持。第三范围旧版本、26.x、自定义世界生成、Minecraft Bedrock、混合版本存档和完整方块世界生成不在当前支持范围内。
 
 ## 构建与测试
 

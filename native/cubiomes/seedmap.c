@@ -9,10 +9,13 @@
 #include <string.h>
 
 static const cm_version versions[] = {
+    {MC_1_21_5,7,"1.21.5"}, {MC_1_21_11,7,"1.21.11"}, {MC_1_21_WD,7,"1.21.4"},
     {MC_1_21_3,7,"1.21.3"}, {MC_1_21_1,7,"1.21.1"},
     {MC_1_20_6,7,"1.20.6"}, {MC_1_19_4,7,"1.19.4"},
     {MC_1_19_2,7,"1.19.2"}, {MC_1_18_2,7,"1.18.2"},
-    {MC_1_17_1,7,"1.17.1"}, {MC_1_16_5,7,"1.16.5"}
+    {MC_1_17_1,7,"1.17.1"}, {MC_1_16_5,7,"1.16.5"},
+    {MC_1_16_1,7,"1.16.1"}, {MC_1_15_2,7,"1.15.2"},
+    {MC_1_14_4,7,"1.14.4"}, {MC_1_13_2,7,"1.13.2"}
 };
 static int valid_version(int mc) {
     for (int i=0;i<(int)(sizeof(versions)/sizeof(*versions));i++)
@@ -33,7 +36,7 @@ static int64_t floor_div(int64_t a, int b) {
     int64_t q=a/b, r=a%b; return q-(r<0);
 }
 int cm_abi_version(void) { return 1; }
-const char *cm_source_revision(void) { return "e61f90580cbdd883214a8054670dacae655e59c0"; }
+const char *cm_source_revision(void) { return "ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2"; }
 int cm_versions(cm_version *out, int capacity) {
     int n=(int)(sizeof(versions)/sizeof(*versions));
     if (!out) return n;
@@ -143,10 +146,11 @@ int cm_strongholds(void *handle,cm_hit *out,int capacity) {
     StrongholdIter sh;
     initFirstStronghold(&sh,g->mc,g->seed);
     int n=0, more;
+    int max_count = g->mc < MC_1_9 ? 3 : 128;
     do {
         more=nextStronghold(&sh,g);
         out[n++]=(cm_hit){100,sh.pos.x,sh.pos.z,1};
-    } while(more>0 && n<128);
+    } while(more>0 && n<max_count);
     return n;
 }
 int cm_slime(uint64_t seed,int cx,int cz) {

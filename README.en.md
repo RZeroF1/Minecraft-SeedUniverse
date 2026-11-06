@@ -22,10 +22,11 @@ The detailed guides are maintained in Simplified Chinese.
 - Source version: `0.2.1`
 - Target framework: `.NET 10`
 - Native runtime: Windows `win-x64`
-- Minecraft Java: `1.16.5`, `1.17.1`, `1.18.2`, `1.19.2`, `1.19.4`, `1.20.6`, `1.21.1`, `1.21.3`
+- Minecraft Java release catalog: 43 release entries covering `1.13.2`–`1.21.11`, backed by 14 unique algorithm profiles
+- Version status: existing `1.16.5`–`1.21.3` Native profiles remain supported; `1.13.2`–`1.16.1` and their patch aliases are Native-smoke/experimental profiles; `1.21.5` has a verified biome JAR comparison but experimental structures; `1.21.11` still lacks a game oracle
 - Dimensions: Overworld `0`, Nether `-1`, End `1`
 - Sampling steps: `1`, `4`, `16`, `64`, `256` blocks
-- Cubiomes revision: `e61f90580cbdd883214a8054670dacae655e59c0`
+- Cubiomes revision: base `e61f90580cbdd883214a8054670dacae655e59c0` with PR #162 changes at `ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2`
 
 ```text
 Host UI / image framework

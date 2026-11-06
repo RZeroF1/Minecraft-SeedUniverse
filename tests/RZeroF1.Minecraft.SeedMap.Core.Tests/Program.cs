@@ -57,6 +57,20 @@ foreach (var v in SeedMap.Api.Versions)
             $"localized biome names {v.Key}/{dim}");
     }
 Console.WriteLine("PASS localized biome names across all versions/dimensions");
+var capabilities = SeedMap.Api.VersionCapabilities;
+Assert(SeedMap.Api.Versions.Count == 43, "release catalog coverage");
+Assert(SeedMap.Api.GetVersionCapability("1.16.2").BiomeProfileKey == "cubiomes-1.16.5" &&
+    SeedMap.Api.GetVersionCapability("1.16.2").Overall == VersionSupportStatus.Experimental,
+    "1.16.2 release alias");
+Assert(capabilities.Any(v => v.ReleaseKey == "1.13.2" && v.Overall == VersionSupportStatus.Experimental &&
+    v.Biomes == VersionSupportStatus.NativeSmokeOnly), "intermediate profile capability");
+Assert(capabilities.Single(v => v.ReleaseKey == "1.21.1").BiomeProfileKey == "cubiomes-1.21.3" &&
+    capabilities.Single(v => v.ReleaseKey == "1.21.1").StructureProfileKey == "cubiomes-1.21.1", "shared biome profile");
+Assert(capabilities.Single(v => v.ReleaseKey == "1.21.5").Biomes == VersionSupportStatus.Supported &&
+    capabilities.Single(v => v.ReleaseKey == "1.21.5").Structures == VersionSupportStatus.Experimental,
+    "1.21.5 capability boundary");
+Assert(!capabilities.Any(v => v.ReleaseKey is "1.0.0" or "1.1.0" or "1.2.5"), "legacy range remains closed");
+Console.WriteLine("PASS version/profile capability matrix");
 // Independent Java Random and signed int overflow implementation for slime chunks.
 static bool SlimeJava(long seed, int x, int z)
 {

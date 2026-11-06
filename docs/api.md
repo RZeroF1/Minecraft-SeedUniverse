@@ -18,11 +18,13 @@ var world = new SeedMap.World(
 var cancellationToken = CancellationToken.None;
 ```
 
-后续代码段接续以上的 `world` 和 `cancellationToken`。版本 ID 来自 `Api.Versions`，维度使用主世界 `0`、下界 `-1`、末地 `1`，`Y` 表示采样高度。世界坐标以方块为单位，范围为 `[-30_000_000, 30_000_000)`；`Bounds` 包含最小边界，不包含最大边界。
+后续代码段接续以上的 `world` 和 `cancellationToken`。版本 ID 来自 `Api.Versions`；它返回发行版本目录，补丁版本可以共享底层 Native Profile。维度使用主世界 `0`、下界 `-1`、末地 `1`，`Y` 表示采样高度。世界坐标以方块为单位，范围为 `[-30_000_000, 30_000_000)`；`Bounds` 包含最小边界，不包含最大边界。
 
 | API | 用途 |
 |---|---|
 | `SeedMap.Api.Versions` | 查询 Native 实际支持的 Java 版本。 |
+| `SeedMap.Api.VersionCapabilities` | 查询发行版本到内部 Profile 的映射、群系/结构/维度状态和验证等级。 |
+| `SeedMap.Api.GetVersionCapability(releaseKey)` | 按发行版本读取能力描述；未知版本抛出参数异常。 |
 | `SeedMap.Api.Biomes(version, dimension)` | 查询群系 ID、英文键名、中文名和颜色。 |
 | `SeedMap.Api.Structures(version, dimension)` | 查询结构 ID、英文键名、名称和区域大小。 |
 | `SeedMap.Api.ParseSeed(text)` | 去除首尾空白后解析十进制 `long`，其他非空文本按 Java `String.hashCode()` 计算。 |
@@ -31,6 +33,8 @@ var cancellationToken = CancellationToken.None;
 | `SeedMap.Api.QueryRegion(...)` | 查询指定结构区域，未找到时返回 `null`。 |
 | `SeedMap.Api.Strongholds(...)` | 查询要塞位置。 |
 | `SeedMap.Api.IsSlimeChunk(seed, chunkX, chunkZ)` | 按区块坐标查询史莱姆区块。 |
+
+`VersionInfo` 表示 Native 能力表中的发行版本和整数 ID；`VersionCapability` 额外表示 `BiomeProfileKey`、`StructureProfileKey`、总体状态、群系状态、结构状态、维度状态和验证状态。发行版本可以共享群系 profile，同时保留独立结构 profile。`Supported` 表示已纳入正式能力，`Experimental` 表示部分能力已经验证，`NativeSmokeOnly` 表示只完成 Native 调用和边界冒烟。结构 profile 的位置预测和适用性检查不等于完整方块结构生成。
 
 ## 同步群系采样
 

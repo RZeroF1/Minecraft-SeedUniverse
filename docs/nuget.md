@@ -71,6 +71,8 @@ dotnet pack src/RZeroF1.Minecraft.SeedMap.Core/RZeroF1.Minecraft.SeedMap.Core.cs
 
 包输出到 `artifacts/packages/`。构建过程调用本地 Native 构建脚本，使用固定的 Cubiomes 源码；指定 `win-x86`、`win-arm64` 或其他运行时会失败。
 
+版本能力由包内 `Api.VersionCapabilities` 返回。实验性 profile 会随 Native 资产编译并可用于研究或受控场景，但其结构或版本 oracle 尚未完成时，消费端应按能力状态关闭对应功能。
+
 ## 独立包消费验证
 
 `tests/PackageConsumer` 只使用 `PackageReference`，通过真实 `.nupkg` 加载托管程序集与 Native DLL。其 `NuGet.Config` 包含本地产物目录和 nuget.org。使用独立缓存并指定配置文件还原，确保首次验证读取本次生成的本地版本：
