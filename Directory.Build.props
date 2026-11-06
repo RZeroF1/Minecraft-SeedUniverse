@@ -9,9 +9,12 @@
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <EmbedUntrackedSources>false</EmbedUntrackedSources>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <RepositoryRoot Condition="'$(RepositoryRoot)' == ''">$(MSBuildThisFileDirectory)</RepositoryRoot>
+    <!-- Private material must never become default SDK inputs, including embedded sources. -->
+    <SeedMapPrivateGlobs>**/internal*/**;**/research/**;**/investigations/**;**/screenshots/**;**/test-samples/**;**/test-results/**;**/temp/**;**/tmp/**;**/*donotsubmit*/**;**/*donotsubmit*;**/*do-not-submit*/**;**/*do-not-submit*;**/*do not submit*/**;**/*do not submit*;**/AGENTS.md;**/Agent.md;**/*.zip;**/*.7z;**/*.tmp;**/*.bak</SeedMapPrivateGlobs>
+    <DefaultItemExcludes>$(DefaultItemExcludes);$(SeedMapPrivateGlobs)</DefaultItemExcludes>
   </PropertyGroup>
 </Project>

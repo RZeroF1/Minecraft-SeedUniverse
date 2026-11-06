@@ -7,4 +7,28 @@
     <SeedMapNativeRid Condition="'$(SeedMapNativeRid)' == ''">win-x64</SeedMapNativeRid>
     <SeedMapNativeArchitecture Condition="'$(SeedMapNativeRid)' == 'win-x64'">x64</SeedMapNativeArchitecture>
   </PropertyGroup>
+  <PropertyGroup>
+    <SeedMapPrivatePathPattern>(?i)do[ _-]?not[ _-]?submit|(^|[/\\])(agents?\.md|internal[^/\\]*|research|investigations|screenshots|test-samples|test-results|temp|tmp)([/\\]|$)|\.(zip|7z|tmp|bak)$</SeedMapPrivatePathPattern>
+  </PropertyGroup>
+  <!-- Also remove explicitly included private files, independently of Git ignore rules. -->
+  <Target Name="ExcludeSeedMapPrivateFiles" BeforeTargets="PrepareForBuild;AssignTargetPaths;GenerateNuspec">
+    <ItemGroup>
+      <None Remove="$(SeedMapPrivateGlobs)" />
+      <None Remove="@(None)" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(None.FullPath)', '$(SeedMapPrivatePathPattern)'))" />
+      <Content Remove="$(SeedMapPrivateGlobs)" />
+      <Content Remove="@(Content)" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(Content.FullPath)', '$(SeedMapPrivatePathPattern)'))" />
+      <Compile Remove="$(SeedMapPrivateGlobs)" />
+      <Compile Remove="@(Compile)" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(Compile.FullPath)', '$(SeedMapPrivatePathPattern)'))" />
+      <EmbeddedResource Remove="$(SeedMapPrivateGlobs)" />
+      <EmbeddedResource Remove="@(EmbeddedResource)" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(EmbeddedResource.FullPath)', '$(SeedMapPrivatePathPattern)'))" />
+      <AdditionalFiles Remove="$(SeedMapPrivateGlobs)" />
+      <AdditionalFiles Remove="@(AdditionalFiles)" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(AdditionalFiles.FullPath)', '$(SeedMapPrivatePathPattern)'))" />
+    </ItemGroup>
+  </Target>
+  <Target Name="ExcludeSeedMapPrivatePublishFiles" AfterTargets="ComputeFilesToPublish">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="$(SeedMapPrivateGlobs)" />
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(ResolvedFileToPublish.FullPath)', '$(SeedMapPrivatePathPattern)'))" />
+    </ItemGroup>
+  </Target>
 </Project>

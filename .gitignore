@@ -10,3 +10,23 @@ artifacts/
 *.user
 *.suo
 /docs/Internal-DONOTSUBMIT/
+
+# Local agent instructions and private research (never source-release inputs).
+[Aa][Gg][Ee][Nn][Tt].md
+[Aa][Gg][Ee][Nn][Tt][Ss].md
+[Dd][Oo][ -][Nn][Oo][Tt][ -][Ss][Uu][Bb][Mm][Ii][Tt]*
+*[Dd][Oo][Nn][Oo][Tt][Ss][Uu][Bb][Mm][Ii][Tt]*
+*[Dd][Oo]-[Nn][Oo][Tt]-[Ss][Uu][Bb][Mm][Ii][Tt]*
+*[Dd][Oo] [Nn][Oo][Tt] [Ss][Uu][Bb][Mm][Ii][Tt]*
+/docs/[Ii]nternal*/
+**/research/
+**/investigations/
+**/screenshots/
+**/test-samples/
+**/test-results/
+**/temp/
+**/tmp/
+*.zip
+*.7z
+*.tmp
+*.bak

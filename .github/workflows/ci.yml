@@ -21,6 +21,10 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: 检查源码资料隔离
+        shell: pwsh
+        run: ./scripts/Test-ArtifactIsolation.ps1 -CheckTracked
+
       - name: 配置 .NET 10
         uses: actions/setup-dotnet@v4
         with:
@@ -81,6 +85,10 @@ jobs:
       - name: 打包 NuGet
         shell: pwsh
         run: dotnet pack src/RZeroF1.Minecraft.SeedMap.Core/RZeroF1.Minecraft.SeedMap.Core.csproj -c Release -r win-x64 --no-restore -nologo
+
+      - name: 检查包完整白名单与构建输出隔离
+        shell: pwsh
+        run: ./scripts/Test-ArtifactIsolation.ps1 -PackageDirectory artifacts/packages -OutputDirectory src/RZeroF1.Minecraft.SeedMap.Core/bin/Release/net10.0/win-x64
 
       - name: 检查随包文档、许可证与源码元数据
         shell: pwsh
