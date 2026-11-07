@@ -23,11 +23,11 @@ The detailed guides are maintained in Simplified Chinese.
 - Target framework: `.NET 10`
 - Native runtime: Windows `win-x64`
 - Minecraft Java release catalog: 89 entries: all 46 official releases from `1.2.5` through `1.12.2`, plus the existing 43 entries from `1.13.2` through `1.21.11`; see the [version matrix](docs/versions.md)
-- Legacy verification: every exact release has game-JAR biome, dimension and structure-candidate checks. Stronghold cache history in 1.2.5, 1.3.1 and 1.3.2 remains experimental. Candidate support does not include full block generation.
-- Existing version status: existing `1.16.5`–`1.21.3` Native profiles remain supported; `1.13.2`–`1.16.1` and their patch aliases are Native-smoke/experimental profiles; `1.21.5` has a verified biome JAR comparison but experimental structures; `1.21.11` still lacks a game oracle
+- Exact-JAR verification: all 43 releases from 1.13.2 through 1.21.11 and all 46 releases from 1.2.5 through 1.12.2 have independent game-JAR Oracle records. Biomes, dimensions, strongholds, mineshafts, and registered structure candidate stages for 1.13.2–1.17.1 are Supported; full structure block generation remains outside the support boundary.
+- Modern version status: 1.18–1.21.11 retain Experimental biome and structure stages. Their exact JAR, structure placement, generation-point, and boundary records are complete; biome results still contain 225 confirmed Java parameter tie-selection differences.
 - Dimensions: Overworld `0`, Nether `-1`, End `1`
 - Sampling steps: `1`, `4`, `16`, `64`, `256` blocks
-- Cubiomes revision: base `e61f90580cbdd883214a8054670dacae655e59c0` with PR #162 changes at `ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2`
+- Cubiomes revision: base `e61f90580cbdd883214a8054670dacae655e59c0` with PR #162 changes at `ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2` and local `legacy46.1+modern43.1` adaptations
 
 ```text
 Host UI / image framework
@@ -88,18 +88,16 @@ This example runs in a .NET 10 console project with implicit usings enabled. Eac
 
 The package includes Windows x64 native assets and targets vanilla Minecraft Java world computation. Structure results use Cubiomes placement predictions and viability checks. Custom world generation, Minecraft Bedrock, worlds containing regions from different game versions, and full block-world generation are outside the supported scope.
 
-## Build and test
+## Build and package
 
 Building from source requires Windows, the .NET 10 SDK, and Visual Studio C++ Build Tools. Run these commands from the repository root:
 
 ```powershell
 dotnet build src/RZeroF1.Minecraft.SeedMap.Core/RZeroF1.Minecraft.SeedMap.Core.csproj -c Release -r win-x64
-dotnet run --project tests/RZeroF1.Minecraft.SeedMap.Core.Tests/RZeroF1.Minecraft.SeedMap.Core.Tests.csproj -c Release -r win-x64
 dotnet pack src/RZeroF1.Minecraft.SeedMap.Core/RZeroF1.Minecraft.SeedMap.Core.csproj -c Release -r win-x64
-dotnet run --project tests/PackageConsumer/PackageConsumer.csproj -c Release -r win-x64
 ```
 
-`tests/PackageConsumer` uses `PackageReference` to verify the actual `.nupkg` and native DLL loading. Its configured sources include local packages and nuget.org. For verification with an isolated cache, use the [restore command in the NuGet guide](https://github.com/RZeroF1/WinUI-Minecraft-SeedMap/blob/main/docs/nuget.md#独立包消费验证).
+Use `scripts/Test-ArtifactIsolation.ps1` to inspect package contents, license files, and build outputs; see the [NuGet guide](docs/nuget.md).
 
 ## License
 

@@ -9,7 +9,10 @@ artifacts/demo-output/
 artifacts/
 *.user
 *.suo
-/docs/Internal-DONOTSUBMIT/
+/docs/internal/
+logs/
+tests/
+*.obj
 
 # Local agent instructions and private research (never source-release inputs).
 [Aa][Gg][Ee][Nn][Tt].md

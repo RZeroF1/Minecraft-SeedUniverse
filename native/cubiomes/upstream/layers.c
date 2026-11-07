@@ -1908,6 +1908,44 @@ void mapVoronoiPlane(uint64_t sha, int *out, int *src,
 
 int mapVoronoi(const Layer * l, int * out, int x, int z, int w, int h)
 {
+    if (l->mc >= MC_1_15 && l->mc <= MC_1_17)
+    {
+        int minX = INT_MAX, minZ = INT_MAX;
+        int maxX = INT_MIN, maxZ = INT_MIN;
+
+        for (int j = 0; j < h; j++)
+        {
+            for (int i = 0; i < w; i++)
+            {
+                int qx, qz;
+                voronoiAccess3D(l->startSalt, x+i, 0, z+j, &qx, NULL, &qz);
+                if (qx < minX) minX = qx;
+                if (qx > maxX) maxX = qx;
+                if (qz < minZ) minZ = qz;
+                if (qz > maxZ) maxZ = qz;
+            }
+        }
+
+        int srcW = maxX - minX + 1;
+        int srcH = maxZ - minZ + 1;
+        int err = l->p ? l->p->getMap(l->p, out, minX, minZ, srcW, srcH) : 0;
+        if (err != 0)
+            return err;
+
+        int *src = out + (int64_t)w*h;
+        memmove(src, out, sizeof(int)*(int64_t)srcW*srcH);
+        for (int j = 0; j < h; j++)
+        {
+            for (int i = 0; i < w; i++)
+            {
+                int qx, qz;
+                voronoiAccess3D(l->startSalt, x+i, 0, z+j, &qx, NULL, &qz);
+                out[j*(int64_t)w+i] = src[(qz-minZ)*(int64_t)srcW+qx-minX];
+            }
+        }
+        return 0;
+    }
+
     x -= 2;
     z -= 2;
     int px = x >> 2;

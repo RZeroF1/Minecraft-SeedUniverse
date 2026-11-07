@@ -42,103 +42,31 @@ public static partial class Api
     private const string Library = "rzero_seedmap";
     public const int WorldLimit = 30_000_000;
     public const int AbiVersion = 1;
-    public const string Revision = "ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2+legacy46.1";
+    public const string Revision = "ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2+legacy46.1+modern43.1";
     private static readonly Lazy<VersionInfo[]> NativeCapabilities = new(InitializeNative);
     private static readonly Lazy<VersionInfo[]> Capabilities = new(InitializeReleaseCatalog);
     private static readonly Lazy<VersionCapability[]> VersionCapabilityTable = new(InitializeVersionCapabilities);
 
-    private sealed record CapabilityDefinition(
-        string BiomeProfileKey,
-        string StructureProfileKey,
-        VersionSupportStatus Overall,
-        VersionSupportStatus Biomes,
-        VersionSupportStatus Structures,
-        VersionSupportStatus Dimensions,
-        VersionVerificationStatus Verification,
-        string Notes);
-
-    private static readonly IReadOnlyDictionary<string, CapabilityDefinition> Definitions =
-        new Dictionary<string, CapabilityDefinition>(StringComparer.Ordinal)
-        {
-            ["1.13.2"] = Smoke("cubiomes-1.13.2", "Native profile and ABI smoke passed; game oracle is pending."),
-            ["1.14.4"] = Smoke("cubiomes-1.14.4", "Native profile and ABI smoke passed; game oracle is pending."),
-            ["1.15.2"] = Smoke("cubiomes-1.15.2", "Native profile and ABI smoke passed; game oracle is pending."),
-            ["1.16.1"] = Smoke("cubiomes-1.16.1", "Native profile and ABI smoke passed; game oracle is pending."),
-            ["1.16.5"] = Supported("cubiomes-1.16.5"),
-            ["1.17.1"] = Supported("cubiomes-1.17.1"),
-            ["1.18.2"] = Supported("cubiomes-1.18.2"),
-            ["1.19.2"] = Supported("cubiomes-1.19.2"),
-            ["1.19.4"] = Supported("cubiomes-1.19.4"),
-            ["1.20.6"] = Supported("cubiomes-1.20.6"),
-            ["1.21.1"] = new("cubiomes-1.21.3", "cubiomes-1.21.1", VersionSupportStatus.Supported, VersionSupportStatus.Supported, VersionSupportStatus.Supported, VersionSupportStatus.Supported, VersionVerificationStatus.GameJarBiomesAndDimensions, "群系可复用 1.21.3 profile；结构保留 1.21.1 的独立 profile。"),
-            ["1.21.3"] = Supported("cubiomes-1.21.3"),
-            ["1.21.5"] = new("cubiomes-1.21.5-pr162", "cubiomes-1.21.5-pr162", VersionSupportStatus.Experimental, VersionSupportStatus.Supported, VersionSupportStatus.Experimental, VersionSupportStatus.Supported, VersionVerificationStatus.GameJarBiomesAndDimensions, "群系和三维度采样已与 1.21.5 JAR 对照；结构仍需单独验证。"),
-            ["1.21.11"] = new("cubiomes-1.21.5-pr162", "cubiomes-1.21.5-pr162", VersionSupportStatus.Experimental, VersionSupportStatus.NativeSmokeOnly, VersionSupportStatus.NativeSmokeOnly, VersionSupportStatus.NativeSmokeOnly, VersionVerificationStatus.NativeSmoke, "复用 1.21.5 profile 的候选版本，尚未完成 1.21.11 游戏 oracle。"),
-            ["1.21.4"] = Smoke("cubiomes-1.21-winter-drop", "复用 Winter Drop Native profile；尚未完成 1.21.4 游戏 oracle。"),
-            ["1.14"] = Alias("cubiomes-1.14.4", "发行版本别名，尚未完成该精确 JAR 的独立 oracle。"),
-            ["1.14.1"] = Alias("cubiomes-1.14.4", "发行版本别名，尚未完成该精确 JAR 的独立 oracle。"),
-            ["1.14.2"] = Alias("cubiomes-1.14.4", "发行版本别名，尚未完成该精确 JAR 的独立 oracle。"),
-            ["1.14.3"] = Alias("cubiomes-1.14.4", "发行版本别名，尚未完成该精确 JAR 的独立 oracle。"),
-            ["1.15"] = Alias("cubiomes-1.15.2", "发行版本别名，尚未完成该精确 JAR 的独立 oracle。"),
-            ["1.15.1"] = Alias("cubiomes-1.15.2", "发行版本别名，尚未完成该精确 JAR 的独立 oracle。"),
-            ["1.16"] = Alias("cubiomes-1.16.1", "发行版本别名，尚未完成该精确 JAR 的独立 oracle。"),
-            ["1.16.2"] = Alias("cubiomes-1.16.5", "Cubiomes 将 1.16.1 作为特殊分界；该版本映射到 1.16.5 profile，仍需精确 JAR 对照。"),
-            ["1.16.3"] = Alias("cubiomes-1.16.5", "Cubiomes 将 1.16.1 作为特殊分界；该版本映射到 1.16.5 profile，仍需精确 JAR 对照。"),
-            ["1.16.4"] = Alias("cubiomes-1.16.5", "Cubiomes 将 1.16.1 作为特殊分界；该版本映射到 1.16.5 profile，仍需精确 JAR 对照。"),
-            ["1.18"] = Alias("cubiomes-1.18.2", "发行版本别名，尚未完成该精确 JAR 的独立 oracle。"),
-            ["1.18.1"] = Alias("cubiomes-1.18.2", "发行版本别名，尚未完成该精确 JAR 的独立 oracle。"),
-            ["1.19"] = Alias("cubiomes-1.19.2", "发行版本别名，尚未完成该精确 JAR 的独立 oracle。"),
-            ["1.19.1"] = Alias("cubiomes-1.19.2", "发行版本别名，尚未完成该精确 JAR 的独立 oracle。"),
-            ["1.19.3"] = Alias("cubiomes-1.19.4", "发行版本别名，尚未完成该精确 JAR 的独立 oracle。"),
-            ["1.20"] = Alias("cubiomes-1.20.6", "发行版本别名，尚未完成该精确 JAR 的独立 oracle。"),
-            ["1.20.1"] = Alias("cubiomes-1.20.6", "发行版本别名，尚未完成该精确 JAR 的独立 oracle。"),
-            ["1.20.2"] = Alias("cubiomes-1.20.6", "发行版本别名，尚未完成该精确 JAR 的独立 oracle。"),
-            ["1.20.3"] = Alias("cubiomes-1.20.6", "发行版本别名，尚未完成该精确 JAR 的独立 oracle。"),
-            ["1.20.4"] = Alias("cubiomes-1.20.6", "发行版本别名，尚未完成该精确 JAR 的独立 oracle。"),
-            ["1.20.5"] = Alias("cubiomes-1.20.6", "发行版本别名，尚未完成该精确 JAR 的独立 oracle。"),
-            ["1.21"] = Alias("cubiomes-1.21.1", "发行版本别名，尚未完成该精确 JAR 的独立 oracle。"),
-            ["1.21.2"] = Alias("cubiomes-1.21.3", "发行版本别名，尚未完成该精确 JAR 的独立 oracle。"),
-            ["1.21.6"] = Alias("cubiomes-1.21.5-pr162", "发行版本别名，尚未完成该精确 JAR 的独立 oracle。"),
-            ["1.21.7"] = Alias("cubiomes-1.21.5-pr162", "发行版本别名，尚未完成该精确 JAR 的独立 oracle。"),
-            ["1.21.8"] = Alias("cubiomes-1.21.5-pr162", "发行版本别名，尚未完成该精确 JAR 的独立 oracle。"),
-            ["1.21.9"] = Alias("cubiomes-1.21.5-pr162", "发行版本别名，尚未完成该精确 JAR 的独立 oracle。"),
-            ["1.21.10"] = Alias("cubiomes-1.21.5-pr162", "发行版本别名，尚未完成该精确 JAR 的独立 oracle。"),
-        };
-
-    private static CapabilityDefinition Alias(string profile, string notes) => new(
-        profile, profile, VersionSupportStatus.Experimental, VersionSupportStatus.NativeSmokeOnly,
-        VersionSupportStatus.NativeSmokeOnly, VersionSupportStatus.NativeSmokeOnly,
-        VersionVerificationStatus.NativeSmoke, notes);
     private static readonly IReadOnlyDictionary<string, string> ReleaseToNative =
         new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["1.13.2"] = "1.13.2",
-            ["1.14"] = "1.14.4", ["1.14.1"] = "1.14.4", ["1.14.2"] = "1.14.4",
+            ["1.14"] = "1.14", ["1.14.1"] = "1.14.4", ["1.14.2"] = "1.14.4",
             ["1.14.3"] = "1.14.4", ["1.14.4"] = "1.14.4",
             ["1.15"] = "1.15.2", ["1.15.1"] = "1.15.2", ["1.15.2"] = "1.15.2",
             ["1.16"] = "1.16.1", ["1.16.1"] = "1.16.1",
             ["1.16.2"] = "1.16.5", ["1.16.3"] = "1.16.5", ["1.16.4"] = "1.16.5", ["1.16.5"] = "1.16.5",
             ["1.17.1"] = "1.17.1",
-            ["1.18"] = "1.18.2", ["1.18.1"] = "1.18.2", ["1.18.2"] = "1.18.2",
+            ["1.18"] = "1.18", ["1.18.1"] = "1.18", ["1.18.2"] = "1.18.2",
             ["1.19"] = "1.19.2", ["1.19.1"] = "1.19.2", ["1.19.2"] = "1.19.2",
             ["1.19.3"] = "1.19.4", ["1.19.4"] = "1.19.4",
             ["1.20"] = "1.20.6", ["1.20.1"] = "1.20.6", ["1.20.2"] = "1.20.6",
             ["1.20.3"] = "1.20.6", ["1.20.4"] = "1.20.6", ["1.20.5"] = "1.20.6", ["1.20.6"] = "1.20.6",
             ["1.21"] = "1.21.1", ["1.21.1"] = "1.21.1", ["1.21.2"] = "1.21.3", ["1.21.3"] = "1.21.3",
-            ["1.21.4"] = "1.21.4", ["1.21.5"] = "1.21.5", ["1.21.6"] = "1.21.5",
-            ["1.21.7"] = "1.21.5", ["1.21.8"] = "1.21.5", ["1.21.9"] = "1.21.5",
+            ["1.21.4"] = "1.21.4", ["1.21.5"] = "1.21.5-1.21.8-strongholds", ["1.21.6"] = "1.21.5-1.21.8-strongholds",
+            ["1.21.7"] = "1.21.5-1.21.8-strongholds", ["1.21.8"] = "1.21.5-1.21.8-strongholds", ["1.21.9"] = "1.21.5",
             ["1.21.10"] = "1.21.5", ["1.21.11"] = "1.21.11",
         };
-
-    private static CapabilityDefinition Supported(string profile) => new(
-        profile, profile, VersionSupportStatus.Supported, VersionSupportStatus.Supported,
-        VersionSupportStatus.Supported, VersionSupportStatus.Supported,
-        VersionVerificationStatus.GameJarBiomesAndDimensions, "现有正式 Native profile。");
-
-    private static CapabilityDefinition Smoke(string profile, string notes) => new(
-        profile, profile, VersionSupportStatus.Experimental, VersionSupportStatus.NativeSmokeOnly,
-        VersionSupportStatus.NativeSmokeOnly, VersionSupportStatus.NativeSmokeOnly,
-        VersionVerificationStatus.NativeSmoke, notes);
 
     [StructLayout(LayoutKind.Sequential)]
     private struct NativeVersion { public int Id, Dimensions; public IntPtr Key; }
@@ -200,20 +128,7 @@ public static partial class Api
         return Versions.Select(version =>
         {
             if (version.Id is >= 100 and < 146) return LegacyCapability(version);
-            if (!Definitions.TryGetValue(version.Key, out var definition))
-                throw new InvalidOperationException($"版本 {version.Key} 缺少能力定义。");
-            return new VersionCapability(version.Key, definition.BiomeProfileKey, definition.StructureProfileKey, version.Id,
-                definition.Overall, definition.Biomes, definition.Structures,
-                definition.Dimensions, definition.Verification, definition.Notes)
-            {
-                Strongholds = definition.Structures,
-                StructureCapabilities = Array.AsReadOnly(new[] { -1, 0, 1 }
-                    .SelectMany(dimension => Structures(version.Id, dimension))
-                    .Where(structure => structure.Id != 100)
-                    .Select(structure => new StructureCapability(structure.Id, structure.Key,
-                        definition.Structures, VersionSupportStatus.Unsupported, VersionSupportStatus.Unsupported))
-                    .ToArray())
-            };
+            return ModernCapability(version);
         }).ToArray();
     }
 

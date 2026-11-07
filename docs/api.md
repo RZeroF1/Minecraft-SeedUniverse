@@ -34,7 +34,7 @@ var cancellationToken = CancellationToken.None;
 | `SeedMap.Api.Strongholds(...)` | 查询要塞位置。 |
 | `SeedMap.Api.IsSlimeChunk(seed, chunkX, chunkZ)` | 按区块坐标查询史莱姆区块。 |
 
-`VersionInfo` 表示 Native 能力表中的发行版本和整数 ID；`VersionCapability` 额外表示 `BiomeProfileKey`、`StructureProfileKey`、总体状态、群系状态、结构状态、维度状态和验证状态。发行版本可以共享群系 profile，同时保留独立结构 profile。`Supported` 表示已纳入正式能力，`Experimental` 表示部分能力已经验证，`NativeSmokeOnly` 表示只完成 Native 调用和边界冒烟。结构 profile 的位置预测和适用性检查不等于完整方块结构生成。`Strongholds` 单独报告强要塞支持等级；`StructureCapabilities` 按实际存在的结构列出 `Candidates`、`Terrain` 和 `FullGeneration`。`GameJarAlgorithms` 表示该精确 JAR 已完成算法对照。第三范围的候选均已验证，`FullGeneration` 均为 `Unsupported`；末地城的 `Terrain` 仅表示 canSpawn 所需高度谓词，不表示完整地形。完整逐版清单见 [版本矩阵](versions.md)。
+`VersionInfo` 表示 Native 能力表中的发行版本和整数 ID；`VersionCapability` 额外表示 `BiomeProfileKey`、`StructureProfileKey`、总体状态、群系状态、结构状态、维度状态和验证状态。发行版本可以共享群系 profile，同时保留独立结构 profile。`Supported` 表示已纳入正式能力，`Experimental` 表示已执行精确 JAR 对照但仍有版本差异或阶段限制，`NativeSmokeOnly` 表示只完成 Native 调用和边界冒烟。结构 profile 的位置预测、群系适用性、地形判定和完整方块生成分开报告。`Strongholds` 单独报告强要塞支持等级；`StructureCapabilities` 按实际存在的结构列出 `Candidates`、`Terrain` 和 `FullGeneration`。`GameJarAlgorithms` 表示该精确 JAR 已完成算法对照。1.13.2–1.17.1 的已登记候选阶段达到 Supported；1.18–1.21.11 的群系和结构阶段保留 Experimental，`FullGeneration` 均为 `Unsupported`。完整逐版清单见 [版本矩阵](versions.md)。
 
 ## 同步群系采样
 

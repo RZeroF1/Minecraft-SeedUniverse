@@ -11,6 +11,9 @@ enum
     NO_BETA_OCEAN           = 0x2,
     FORCE_OCEAN_VARIANTS    = 0x4,
     LEGACY_TEMPLE_142       = 0x100, // exact 1.4.2 quart predicate/component rules
+    STRONGHOLD_NO_CHERRY    = 0x200, // exact 1.21.5-1.21.8 preference tag
+    OUTPOST_NO_SNOW         = 0x400, // 1.14; snowy outposts added in 1.14.1
+    UNCLAMPED_DEPTH        = 0x800, // exact 1.18/1.18.1
 };
 
 STRUCT(Generator)

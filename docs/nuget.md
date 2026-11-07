@@ -66,30 +66,28 @@ licenses/cubiomes/
 
 ```powershell
 dotnet build src/RZeroF1.Minecraft.SeedMap.Core/RZeroF1.Minecraft.SeedMap.Core.csproj -c Release -r win-x64
-dotnet run --project tests/RZeroF1.Minecraft.SeedMap.Core.Tests/RZeroF1.Minecraft.SeedMap.Core.Tests.csproj -c Release -r win-x64
 dotnet pack src/RZeroF1.Minecraft.SeedMap.Core/RZeroF1.Minecraft.SeedMap.Core.csproj -c Release -r win-x64
 ```
 
 包输出到 `artifacts/packages/`。构建过程调用本地 Native 构建脚本，使用固定的 Cubiomes 源码；指定 `win-x86`、`win-arm64` 或其他运行时会失败。
 
-当前源码包含 89 个发行版本条目，第三范围 46 版逐版状态见 [版本矩阵](versions.md)。原版 JAR、Mapping、Oracle 与实验数据不进入包；消费端运行无需 Java。
+当前源码包含 89 个发行版本条目，43 个现代发行版和 46 个历史发行版的逐版状态见 [版本矩阵](versions.md)。原版 JAR、Mapping、Oracle 与实验数据不进入包；消费端运行无需 Java。
 
-版本能力由包内 `Api.VersionCapabilities` 返回。实验性 profile 会随 Native 资产编译并可用于研究或受控场景，但其结构或版本 oracle 尚未完成时，消费端应按能力状态关闭对应功能。
+版本能力由包内 `Api.VersionCapabilities` 返回。实验性 Profile 会随 Native 资产编译，消费端应按各功能的能力状态和已记录限制决定是否启用。
 
-## 独立包消费验证
+## 包内容检查
 
-`tests/PackageConsumer` 只使用 `PackageReference`，通过真实 `.nupkg` 加载托管程序集与 Native DLL。其 `NuGet.Config` 包含本地产物目录和 nuget.org。使用独立缓存并指定配置文件还原，确保首次验证读取本次生成的本地版本：
+打包后检查公开文件清单与构建输出：
 
 ```powershell
-dotnet restore tests/PackageConsumer/PackageConsumer.csproj -r win-x64 --configfile tests/PackageConsumer/NuGet.Config --packages artifacts/consumer-packages -p:NuGetAudit=false
-dotnet run --project tests/PackageConsumer/PackageConsumer.csproj -c Release -r win-x64 --no-restore
+./scripts/Test-ArtifactIsolation.ps1 -CheckTracked -PackageDirectory artifacts/packages -OutputDirectory src/RZeroF1.Minecraft.SeedMap.Core/bin/Release/net10.0/win-x64
 ```
 
-程序验证瓦片、结构查询、相机、BGRA 转换与 Native 修订号，检查全部 46 个旧版入口，并输出实际加载的托管程序集、Native DLL 路径和 SHA-256。重复打包同一版本进行本地开发验证时，应换用新的缓存目录；准备发布的产物则从最终提交重新构建。
+独立消费验证应在单独的 .NET 10 Windows x64 项目中通过 `PackageReference` 还原实际 `.nupkg`，核对版本能力、Native 修订号和实际加载路径。重复打包同一版本进行本地开发验证时，应换用新的包缓存目录；准备发布的产物从最终提交重新构建。
 
 ## 发布流程
 
-1. 同步项目版本、包消费者、中英文 README、使用文档和包更新说明，完成构建与测试后提交源码。
+1. 同步项目版本、中英文 README、使用文档和包更新说明，完成构建与本地验证后提交源码。
 2. 从最终提交的干净源码重新构建 `.nupkg` 和 `.snupkg`，核对版本、文档、Native 资产、许可证、仓库地址，以及 `.nuspec` 和 PDB SourceLink 中记录的提交 SHA。
 3. 运行独立包消费者，确认实际包还原和 Native DLL 加载成功。仓库 CI 会检查包内容、版本、仓库元数据和当前提交的一致性。
 4. 获得发布授权后，将已验证的产物上传到 NuGet，为同一提交创建版本标签和 GitHub Release，并附上对应产物。

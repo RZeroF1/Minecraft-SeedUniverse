@@ -134,6 +134,7 @@ STRUCT(BiomeNoise)
     SplineStack ss;
     int nptype;
     int mc;
+    int unclampedDepth; // exact 1.18/1.18.1 depth gradient
 };
 // Overworld biome generator for pre-Beta 1.8
 STRUCT(BiomeNoiseBeta)

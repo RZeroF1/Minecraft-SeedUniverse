@@ -55,6 +55,9 @@ static const cm_version versions[] = {
     {143,7,"1.12"},
     {144,7,"1.12.1"},
     {145,7,"1.12.2"},
+    {146,7,"1.21.5-1.21.8-strongholds"},
+    {147,7,"1.14"},
+    {148,7,"1.18"},
     {MC_1_21_5,7,"1.21.5"}, {MC_1_21_11,7,"1.21.11"}, {MC_1_21_WD,7,"1.21.4"},
     {MC_1_21_3,7,"1.21.3"}, {MC_1_21_1,7,"1.21.1"},
     {MC_1_20_6,7,"1.20.6"}, {MC_1_19_4,7,"1.19.4"},
@@ -66,6 +69,9 @@ static const cm_version versions[] = {
 /* Stable ABI release IDs are independent of Cubiomes enum values. */
 static const int legacy_profiles[] = { MC_1_2, MC_1_3, MC_1_3, MC_1_4, MC_1_4, MC_1_4, MC_1_4, MC_1_4, MC_1_5, MC_1_5, MC_1_6, MC_1_6, MC_1_6, MC_1_7, MC_1_7, MC_1_7, MC_1_7, MC_1_7, MC_1_7, MC_1_7, MC_1_7, MC_1_7, MC_1_8, MC_1_8, MC_1_8, MC_1_8, MC_1_8, MC_1_8, MC_1_8, MC_1_8, MC_1_8, MC_1_8, MC_1_9, MC_1_9, MC_1_9, MC_1_9, MC_1_9, MC_1_10, MC_1_10, MC_1_10, MC_1_11, MC_1_11, MC_1_11, MC_1_12, MC_1_12, MC_1_12 };
 static int profile_version(int id) {
+    if (id == 146) return MC_1_21_5;
+    if (id == 147) return MC_1_14;
+    if (id == 148) return MC_1_18;
     return id >= 100 && id < 146 ? legacy_profiles[id-100] : id;
 }
 enum { RELEASE_1_4_2 = 103 };
@@ -88,7 +94,7 @@ static int64_t floor_div(int64_t a, int b) {
     int64_t q=a/b, r=a%b; return q-(r<0);
 }
 int cm_abi_version(void) { return 1; }
-const char *cm_source_revision(void) { return "ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2+legacy46.1"; }
+const char *cm_source_revision(void) { return "ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2+legacy46.1+modern43.1"; }
 int cm_versions(cm_version *out, int capacity) {
     int n=(int)(sizeof(versions)/sizeof(*versions));
     if (!out) return n;
@@ -142,6 +148,9 @@ int cm_create(int mc,uint64_t seed,int dim,void **out) {
     Generator *g=(Generator*)calloc(1,sizeof(Generator));
     if(!g) return CM_MEMORY;
     uint32_t flags = mc==RELEASE_1_4_2 ? LEGACY_TEMPLE_142 : 0;
+    if (mc == 146) flags |= STRONGHOLD_NO_CHERRY;
+    if (mc == 147) flags |= OUTPOST_NO_SNOW;
+    if (mc == 148) flags |= UNCLAMPED_DEPTH;
     setupGenerator(g,profile_version(mc),flags); applySeed(g,dim,seed); *out=g; return CM_OK;
 }
 void cm_destroy(void *handle) { free(handle); }

@@ -291,8 +291,8 @@ int mapNether3D(const NetherNoise *nn, int *out, Range r, float confidence)
                 int zj = (r.z+j)*scale;
                 int v = getNetherBiome(nn, xi, yk, zj, &noisedelta);
                 yout[j*r.sx+i] = v;
-                float cellrad = noisedelta * invgrad;
-                fillRad3D(out, i, j, k, r.sx, r.sy, r.sz, v, cellrad);
+                /* Exact SDK sampling does not infer adjacent cells from a
+                 * heuristic noise-space gradient bound. */
             }
         }
     }
@@ -303,6 +303,28 @@ int mapNether2D(const NetherNoise *nn, int *out, int x, int z, int w, int h)
 {
     Range r = {4, x, z, w, h, 0, 1};
     return mapNether3D(nn, out, r, 1.0);
+}
+
+static int getNetherBiomeQuantized(const NetherNoise *nn, int x, int z)
+{
+    static const int64_t points[5][4] = {
+        {0, 0, 0, nether_wastes}, {0, -5000, 0, soul_sand_valley},
+        {4000, 0, 0, crimson_forest}, {0, 5000, 3750, warped_forest},
+        {-5000, 0, 1750, basalt_deltas}
+    };
+    float temperature = (float)sampleDoublePerlin(&nn->temperature, x, 0, z);
+    float humidity = (float)sampleDoublePerlin(&nn->humidity, x, 0, z);
+    int64_t t = (int64_t)(temperature * 10000.0f);
+    int64_t h = (int64_t)(humidity * 10000.0f);
+    int64_t best = INT64_MAX;
+    int biome = nether_wastes;
+    for (int i = 0; i < 5; i++)
+    {
+        int64_t dt = t-points[i][0], dh = h-points[i][1], offset = points[i][2];
+        int64_t distance = dt*dt + dh*dh + offset*offset;
+        if (distance < best) { best = distance; biome = (int)points[i][3]; }
+    }
+    return biome;
 }
 
 int genNetherScaled(const NetherNoise *nn, int *out, Range r, int mc, uint64_t sha)
@@ -317,6 +339,20 @@ int genNetherScaled(const NetherNoise *nn, int *out, Range r, int mc, uint64_t s
         uint64_t i;
         for (i = 0; i < siz; i++)
             out[i] = nether_wastes;
+        return 0;
+    }
+    if (mc >= MC_1_18)
+    {
+        for (int k = 0; k < r.sy; k++)
+            for (int j = 0; j < r.sz; j++)
+                for (int i = 0; i < r.sx; i++)
+                {
+                    int x4, z4;
+                    if (r.scale == 1)
+                        voronoiAccess3D(sha, r.x+i, r.y+k, r.z+j, &x4, NULL, &z4);
+                    else { x4 = (r.x+i)*(r.scale/4); z4 = (r.z+j)*(r.scale/4); }
+                    out[(k*r.sz+j)*r.sx+i] = getNetherBiomeQuantized(nn, x4, z4);
+                }
         return 0;
     }
 
@@ -447,12 +483,8 @@ int mapEndBiome(const EndNoise *en, int *out, int x, int z, int w, int h)
             {
                 // Legacy Java applies float remainder before conversion. At
                 // distant coordinates the sum exceeds the uint32 range.
-                if (en->mc <= MC_1_12)
-                    v = (uint16_t)fmodf(fabsf((float)rx) * 3439.0f +
+                v = (uint16_t)fmodf(fabsf((float)rx) * 3439.0f +
                             fabsf((float)rz) * 147.0f, 13.0f) + 9;
-                else v = (unsigned int)(
-                        fabsf((float)rx) * 3439.0f + fabsf((float)rz) * 147.0f
-                    ) % 13 + 9;
                 v *= v;
             }
             hmap[(int64_t)j*hw+i] = v;
@@ -545,12 +577,8 @@ float getEndHeightNoise(const EndNoise *en, int x, int z, int range)
             uint16_t v = 0;
             if (rsq > 4096 && sampleSimplex2D(&en->perlin, rx, rz) < -0.9f)
             {
-                if (en->mc <= MC_1_12)
-                    v = (uint16_t)fmodf(fabsf((float)rx) * 3439.0f +
+                v = (uint16_t)fmodf(fabsf((float)rx) * 3439.0f +
                             fabsf((float)rz) * 147.0f, 13.0f) + 9;
-                else v = (unsigned int)(
-                        fabsf((float)rx) * 3439.0f + fabsf((float)rz) * 147.0f
-                    ) % 13 + 9;
                 rx = (oddx - i * 2);
                 rz = (oddz - j * 2);
                 rsq = rx*rx + rz*rz;
@@ -755,6 +783,52 @@ int genEndScaled(const EndNoise *en, int *out, Range r, int mc, uint64_t sha)
         uint64_t i, siz = (uint64_t)r.sx*r.sy*r.sz;
         for (i = 0; i < siz; i++)
             out[i] = the_end;
+        return 0;
+    }
+
+    if (mc >= MC_1_13 && r.scale == 1)
+    {
+        if (mc <= MC_1_14)
+        {
+            int cx = r.x >> 4, cz = r.z >> 4;
+            int cw = ((r.x + r.sx - 1) >> 4) - cx + 1;
+            int ch = ((r.z + r.sz - 1) >> 4) - cz + 1;
+            int *src = malloc(sizeof(int) * cw * ch);
+            if (!src) return 1;
+            mapEndBiome(en, src, cx, cz, cw, ch);
+            for (int k = 0; k < r.sy; k++)
+                for (int j = 0; j < r.sz; j++)
+                    for (int i = 0; i < r.sx; i++)
+                        out[(k*r.sz+j)*r.sx+i] =
+                            src[(((r.z+j)>>4)-cz)*cw+((r.x+i)>>4)-cx];
+            free(src);
+        }
+        else
+        {
+            Range s = getVoronoiSrcRange(r);
+            int *src = malloc(sizeof(int) * s.sx * s.sz);
+            if (!src) return 1;
+            mapEnd(en, src, s.x, s.z, s.sx, s.sz);
+            for (int k = 0; k < r.sy; k++)
+                for (int j = 0; j < r.sz; j++)
+                    for (int i = 0; i < r.sx; i++)
+                    {
+                        int x4, z4;
+                        voronoiAccess3D(sha, r.x+i, r.y+k, r.z+j, &x4, NULL, &z4);
+                        out[(k*r.sz+j)*r.sx+i] = src[(z4-s.z)*s.sx+x4-s.x];
+                    }
+            free(src);
+        }
+        return 0;
+    }
+    if (mc >= MC_1_13 && r.scale > 16)
+    {
+        for (int j = 0; j < r.sz; j++)
+            for (int i = 0; i < r.sx; i++)
+                mapEndBiome(en, out+j*r.sx+i,
+                    (r.x+i)*(r.scale/16), (r.z+j)*(r.scale/16), 1, 1);
+        for (int k = 1; k < r.sy; k++)
+            memcpy(out+k*r.sx*r.sz, out, sizeof(int)*r.sx*r.sz);
         return 0;
     }
 
@@ -1141,6 +1215,7 @@ void initBiomeNoise(BiomeNoise *bn, int mc)
 
     bn->sp = sp;
     bn->mc = mc;
+    bn->unclampedDepth = 0;
 }
 
 
@@ -1176,7 +1251,10 @@ int sampleBiomeNoise(const BiomeNoise *bn, int64_t *np, int x, int y, int z,
         double off = getSpline(bn->sp, np_param) + 0.015F;
 
         //double py = y + sampleDoublePerlin(&bn->shift, y, z, x) * 4.0;
-        d = 1.0 - (y * 4) / 128.0 - 83.0/160.0 + off;
+        // From 1.18.2 the depth gradient clamps at block Y=-64 and Y=320.
+        // Voronoi can select a quart just outside that interval.
+        int depthY = bn->unclampedDepth ? y : y < -16 ? -16 : y > 80 ? 80 : y;
+        d = 1.0 - (depthY * 4) / 128.0 - 83.0/160.0 + off;
     }
 
     t = sampleDoublePerlin(&bn->climate[NP_TEMPERATURE], px, 0, pz);
@@ -1414,7 +1492,7 @@ int get_resulting_node(const uint64_t np[6], const BiomeTree *bt, int idx,
     for (i = 0, n = bt->order; i < n; i++)
     {
         uint64_t ds_inner = get_np_dist(np, bt, inner);
-        if (ds_inner < ds)
+        if (ds_inner <= ds)
         {
             int leaf2 = get_resulting_node(np, bt, inner, leaf, ds, depth);
             uint64_t ds_leaf2;
@@ -1653,7 +1731,7 @@ int genBiomeNoiseScaled(const BiomeNoise *bn, int *out, Range r, uint64_t sha)
         // than 1:4, the accuracy becomes questionable anyway. Furthermore
         // situations that want to use a higher scale are usually better off
         // with a faster, if imperfect, result.
-        genBiomeNoise3D(bn, out, r, r.scale > 4);
+        genBiomeNoise3D(bn, out, r, 0);
     }
     return 0;
 }

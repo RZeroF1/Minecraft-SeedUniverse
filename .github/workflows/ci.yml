@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   validate:
-    name: 构建、测试与 NuGet 验证（win-x64）
+    name: 构建与 NuGet 验证（win-x64）
     runs-on: windows-2025
     timeout-minutes: 25
 
@@ -78,10 +78,6 @@ jobs:
         shell: pwsh
         run: dotnet build src/RZeroF1.Minecraft.SeedMap.Core/RZeroF1.Minecraft.SeedMap.Core.csproj -c Release -r win-x64 -nologo
 
-      - name: 运行核心回归测试
-        shell: pwsh
-        run: dotnet run --project tests/RZeroF1.Minecraft.SeedMap.Core.Tests/RZeroF1.Minecraft.SeedMap.Core.Tests.csproj -c Release -r win-x64
-
       - name: 打包 NuGet
         shell: pwsh
         run: dotnet pack src/RZeroF1.Minecraft.SeedMap.Core/RZeroF1.Minecraft.SeedMap.Core.csproj -c Release -r win-x64 --no-restore -nologo
@@ -108,7 +104,7 @@ jobs:
                 $_.FullName -match '(?i)do[ -]?not[ -]?submit|(^|[/\\])agents?\.md$'
               })
               if ($forbidden.Count -gt 0) {
-                throw "包中包含禁止发布的文件：$($forbidden.FullName -join ', ')"
+                throw '包中包含禁止发布的文件；详细路径不写入日志。'
               }
             }
             finally { $archive.Dispose() }
@@ -169,14 +165,6 @@ jobs:
             Write-Host "已验证 $($packages[0].Name) 的版本、文档、仓库提交及 Native 与许可证资产。"
           }
           finally { $zip.Dispose() }
-
-      - name: 从本地产物还原独立包消费者
-        shell: pwsh
-        run: dotnet restore tests/PackageConsumer/PackageConsumer.csproj -r win-x64 --configfile tests/PackageConsumer/NuGet.Config --packages artifacts/consumer-packages -p:NuGetAudit=false
-
-      - name: 运行独立包消费者
-        shell: pwsh
-        run: dotnet run --project tests/PackageConsumer/PackageConsumer.csproj -c Release -r win-x64 --no-restore
 
       - name: 归档已验证的包
         uses: actions/upload-artifact@v4

@@ -828,6 +828,8 @@ int isStrongholdBiome(int mc, int id)
     case mangrove_swamp:
     case deep_dark:
         return 0;
+    case cherry_grove:
+        return mc >= MC_1_21_5;
     default:
         return 1;
     }
@@ -878,6 +880,8 @@ int nextStronghold(StrongholdIter *sh, const Generator *g)
         if (isStrongholdBiome(sh->mc, i+128))
             validM |= (1ULL << i);
     }
+    if (g && (g->flags & STRONGHOLD_NO_CHERRY))
+        validM &= ~(1ULL << (cherry_grove - 128));
 
     if (sh->mc > MC_1_19_2)
     {
@@ -1610,9 +1614,8 @@ L_feature:
     case Village:
         if (g->mc <= MC_1_17)
         {
-            if (g->mc == MC_1_15)
-            {   // exclusively in MC_1_15, villages used the same biome check
-                // as other structures
+            if (g->mc >= MC_1_13 && g->mc <= MC_1_15)
+            {   // 1.13-1.15 village predicates sample the block biome at +9.
                 g->entry = &g->ls.layers[L_VORONOI_1];
                 sampleX = chunkX * 16 + 9;
                 sampleZ = chunkZ * 16 + 9;
@@ -1715,6 +1718,8 @@ L_feature:
         }
         id = getBiomeAt(g, 0, sampleX, 319>>2, sampleZ);
         if (id < 0 || !isViableFeatureBiome(g->mc, structureType, id))
+            goto L_not_viable;
+        if ((g->flags & OUTPOST_NO_SNOW) && id == snowy_tundra)
             goto L_not_viable;
         goto L_viable;
     }

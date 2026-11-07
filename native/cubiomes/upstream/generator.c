@@ -90,6 +90,7 @@ void setupGenerator(Generator *g, int mc, uint32_t flags)
     else if (mc >= MC_1_18)
     {
         initBiomeNoise(&g->bn, mc);
+        g->bn.unclampedDepth = (flags & UNCLAMPED_DEPTH) != 0;
     }
     else
     {

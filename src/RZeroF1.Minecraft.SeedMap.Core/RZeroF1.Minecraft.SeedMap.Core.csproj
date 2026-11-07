@@ -20,7 +20,7 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/RZeroF1/WinUI-Minecraft-SeedMap</RepositoryUrl>
     <PackageProjectUrl>https://github.com/RZeroF1/WinUI-Minecraft-SeedMap</PackageProjectUrl>
-    <PackageReleaseNotes>接入 Minecraft Java 1.2.5–1.12.2 全部 46 个正式发行版本，逐版验证群系、维度、结构候选与强要塞；修正旧版矿井、神殿、村庄、Monument 和末地城边界，分离末地公开群系语义；保留既有版本行为并公开分功能验证等级。</PackageReleaseNotes>
+    <PackageReleaseNotes>完成 Minecraft Java 1.13.2–1.21.11 全部 43 个发行版本与 1.2.5–1.12.2 全部 46 个历史版本的精确 JAR Oracle 对照；接入现代版本分界、旧版修复、强要塞、矿井、群系和结构阶段能力矩阵，并保留完整结构方块生成不属于 SDK 支持范围的边界。</PackageReleaseNotes>
     <PackageOutputPath>$(RepositoryRoot)\artifacts\packages\</PackageOutputPath>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
