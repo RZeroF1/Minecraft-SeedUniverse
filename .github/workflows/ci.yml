@@ -126,6 +126,7 @@ jobs:
               'docs/api.md',
               'docs/architecture.md',
               'docs/nuget.md',
+              'docs/versions.md',
               'LICENSE',
               'THIRD-PARTY-NOTICES.md',
               'licenses/cubiomes/LICENSE',

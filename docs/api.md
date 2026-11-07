@@ -2,7 +2,7 @@
 
 [项目首页](../README.md) · [架构说明](architecture.md) · [NuGet 与发布](nuget.md)
 
-本文面向 `0.2.1` API，与 `0.2.0` 的公共调用方式一致。示例采用 `using SeedMap = RZeroF1.Minecraft.SeedMap;` 别名，所有 SDK 类型均通过 `SeedMap.` 访问，可用于启用隐式 `using` 的 .NET 10 项目。
+本文面向 `0.2.2` API，与 `0.2.0` 的公共调用方式一致。示例采用 `using SeedMap = RZeroF1.Minecraft.SeedMap;` 别名，所有 SDK 类型均通过 `SeedMap.` 访问，可用于启用隐式 `using` 的 .NET 10 项目。
 
 ## 世界与能力查询
 
@@ -25,7 +25,7 @@ var cancellationToken = CancellationToken.None;
 | `SeedMap.Api.Versions` | 查询 Native 实际支持的 Java 版本。 |
 | `SeedMap.Api.VersionCapabilities` | 查询发行版本到内部 Profile 的映射、群系/结构/维度状态和验证等级。 |
 | `SeedMap.Api.GetVersionCapability(releaseKey)` | 按发行版本读取能力描述；未知版本抛出参数异常。 |
-| `SeedMap.Api.Biomes(version, dimension)` | 查询群系 ID、英文键名、中文名和颜色。 |
+| `SeedMap.Api.Biomes(version, dimension)` | 查询 DEFAULT 世界可生成的群系目录，含 ID、英文键名、中文名和颜色；不等同于原版完整注册表。 |
 | `SeedMap.Api.Structures(version, dimension)` | 查询结构 ID、英文键名、名称和区域大小。 |
 | `SeedMap.Api.ParseSeed(text)` | 去除首尾空白后解析十进制 `long`，其他非空文本按 Java `String.hashCode()` 计算。 |
 | `SeedMap.Api.Create(world)` | 创建由 `SafeHandle` 管理的 Native generator，使用后释放。 |
@@ -34,7 +34,7 @@ var cancellationToken = CancellationToken.None;
 | `SeedMap.Api.Strongholds(...)` | 查询要塞位置。 |
 | `SeedMap.Api.IsSlimeChunk(seed, chunkX, chunkZ)` | 按区块坐标查询史莱姆区块。 |
 
-`VersionInfo` 表示 Native 能力表中的发行版本和整数 ID；`VersionCapability` 额外表示 `BiomeProfileKey`、`StructureProfileKey`、总体状态、群系状态、结构状态、维度状态和验证状态。发行版本可以共享群系 profile，同时保留独立结构 profile。`Supported` 表示已纳入正式能力，`Experimental` 表示部分能力已经验证，`NativeSmokeOnly` 表示只完成 Native 调用和边界冒烟。结构 profile 的位置预测和适用性检查不等于完整方块结构生成。
+`VersionInfo` 表示 Native 能力表中的发行版本和整数 ID；`VersionCapability` 额外表示 `BiomeProfileKey`、`StructureProfileKey`、总体状态、群系状态、结构状态、维度状态和验证状态。发行版本可以共享群系 profile，同时保留独立结构 profile。`Supported` 表示已纳入正式能力，`Experimental` 表示部分能力已经验证，`NativeSmokeOnly` 表示只完成 Native 调用和边界冒烟。结构 profile 的位置预测和适用性检查不等于完整方块结构生成。`Strongholds` 单独报告强要塞支持等级；`StructureCapabilities` 按实际存在的结构列出 `Candidates`、`Terrain` 和 `FullGeneration`。`GameJarAlgorithms` 表示该精确 JAR 已完成算法对照。第三范围的候选均已验证，`FullGeneration` 均为 `Unsupported`；末地城的 `Terrain` 仅表示 canSpawn 所需高度谓词，不表示完整地形。完整逐版清单见 [版本矩阵](versions.md)。
 
 ## 同步群系采样
 
@@ -44,7 +44,7 @@ int[] samples = SeedMap.Api.Generate(
     generator, x: -64, z: -64, width: 32, height: 32, step: 4, y: world.Y);
 ```
 
-`width`、`height` 是样本数量，`step` 是相邻样本间隔的方块数，可取 `1`、`4`、`16`、`64`、`256`。返回数组按行排列，索引为 `row * width + column`。同一个 generator 应由单个计算任务独占。
+`width`、`height` 是样本数量，`step` 是相邻样本间隔的方块数，可取 `1`、`4`、`16`、`64`、`256`。返回数组按行排列，索引为 `row * width + column`。同一个 generator 应由单个计算任务独占。旧版主世界 scale 1 为方块 Voronoi，4 为 RiverMix，16／64／256 分别为中间 Layer 输出，不能视为对 scale 1 的等距抽样；旧版群系忽略 Y。1.12.2 及以前的公开末地群系始终为 ID 9，内部岛屿分类不向群系目录暴露。
 
 ## 异步瓦片、结构与搜索
 

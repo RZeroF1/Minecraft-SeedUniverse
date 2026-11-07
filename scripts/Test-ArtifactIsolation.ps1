@@ -6,7 +6,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $privatePattern = '(?i)do[ _-]?not[ _-]?submit|(^|/)(agents?\.md|internal[^/]*|research|investigations|screenshots|test-samples|test-results|temp|tmp)(/|$)|\.(zip|7z|tmp|bak)$'
-$publicDocs = @('docs/api.md', 'docs/architecture.md', 'docs/nuget.md')
+$publicDocs = @('docs/api.md', 'docs/architecture.md', 'docs/nuget.md', 'docs/versions.md')
 function Assert-PublicPath([string] $path) {
     $path = $path.Replace('\', '/')
     if ($path -match $privatePattern -or ($path -match '^docs/' -and $path -notin $publicDocs)) {
@@ -21,6 +21,7 @@ if ($CheckTracked) {
 }
 if ($PackageDirectory) {
     Add-Type -AssemblyName System.IO.Compression
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
     $packages = @(Get-ChildItem -LiteralPath $PackageDirectory -File | Where-Object { $_.Extension -in '.nupkg', '.snupkg' })
     if (-not $packages.Count) { throw 'No packages found.' }
     $payload = @(
@@ -28,7 +29,7 @@ if ($PackageDirectory) {
         'lib/net10.0/RZeroF1.Minecraft.SeedMap.xml',
         'runtimes/win-x64/native/rzero_seedmap.dll',
         'README.md', 'README.en.md', 'LICENSE', 'THIRD-PARTY-NOTICES.md',
-        'docs/api.md', 'docs/architecture.md', 'docs/nuget.md',
+        'docs/api.md', 'docs/architecture.md', 'docs/nuget.md', 'docs/versions.md',
         'licenses/cubiomes/LICENSE', 'licenses/cubiomes/SOURCE.md', 'licenses/cubiomes/manifest.json'
     )
     foreach ($package in $packages) {
@@ -52,9 +53,11 @@ if ($PackageDirectory) {
 }
 foreach ($directory in $OutputDirectory) {
     $resolved = (Resolve-Path -LiteralPath $directory).Path
+    $prefix = $resolved.TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar
     $files = @(Get-ChildItem -LiteralPath $resolved -Recurse -File)
     foreach ($file in $files) {
-        $relative = [IO.Path]::GetRelativePath($resolved, $file.FullName)
+        # Windows PowerShell 5 does not provide [IO.Path]::GetRelativePath.
+        $relative = $file.FullName.Substring($prefix.Length)
         Assert-PublicPath $relative
         Write-Host "  $relative"
     }

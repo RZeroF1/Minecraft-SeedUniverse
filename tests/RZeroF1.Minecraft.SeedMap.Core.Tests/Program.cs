@@ -58,7 +58,7 @@ foreach (var v in SeedMap.Api.Versions)
     }
 Console.WriteLine("PASS localized biome names across all versions/dimensions");
 var capabilities = SeedMap.Api.VersionCapabilities;
-Assert(SeedMap.Api.Versions.Count == 43, "release catalog coverage");
+Assert(SeedMap.Api.Versions.Count == 89, "release catalog coverage");
 Assert(SeedMap.Api.GetVersionCapability("1.16.2").BiomeProfileKey == "cubiomes-1.16.5" &&
     SeedMap.Api.GetVersionCapability("1.16.2").Overall == VersionSupportStatus.Experimental,
     "1.16.2 release alias");
@@ -69,7 +69,82 @@ Assert(capabilities.Single(v => v.ReleaseKey == "1.21.1").BiomeProfileKey == "cu
 Assert(capabilities.Single(v => v.ReleaseKey == "1.21.5").Biomes == VersionSupportStatus.Supported &&
     capabilities.Single(v => v.ReleaseKey == "1.21.5").Structures == VersionSupportStatus.Experimental,
     "1.21.5 capability boundary");
-Assert(!capabilities.Any(v => v.ReleaseKey is "1.0.0" or "1.1.0" or "1.2.5"), "legacy range remains closed");
+Assert(!capabilities.Any(v => v.ReleaseKey is "1.0.0" or "1.1.0"), "earlier legacy range remains closed");
+var legacyVersions = SeedMap.Api.Versions.Where(v => v.Id is >= 100 and < 146).ToArray();
+Assert(legacyVersions.Length == 46 && legacyVersions.Select(v => v.Id).Distinct().Count() == 46,
+    "46 exact legacy releases have independent stable IDs");
+foreach (var legacy in legacyVersions)
+{
+    var capability = SeedMap.Api.GetVersionCapability(legacy.Key);
+    Assert(capability.Verification == VersionVerificationStatus.GameJarAlgorithms &&
+        capability.Biomes == VersionSupportStatus.Supported && capability.Structures == VersionSupportStatus.Supported,
+        $"exact game verification {legacy.Key}");
+    Assert(capability.StructureCapabilities.All(s => s.Candidates == VersionSupportStatus.Supported &&
+        s.FullGeneration == VersionSupportStatus.Unsupported), $"candidate/full generation boundary {legacy.Key}");
+    Assert(SeedMap.Api.Biomes(legacy.Id, 1).Select(b => b.Id).SequenceEqual(new[] { 9 }) &&
+        SeedMap.Api.Biomes(legacy.Id, -1).Select(b => b.Id).SequenceEqual(new[] { 8 }), $"legacy dimension registries {legacy.Key}");
+    int minor = int.Parse(legacy.Key.Split('.')[1]);
+    using var generator = SeedMap.Api.Create(new(123, legacy.Id, 0, 64));
+    var strongholds = SeedMap.Api.Strongholds(generator);
+    Assert(strongholds.Length == (minor <= 8 ? 3 : 128), $"stronghold generation boundary {legacy.Key}");
+    Assert(strongholds.Select(s => (s.X / 16, s.Z / 16)).Distinct().Count() == strongholds.Length,
+        $"unique legacy strongholds {legacy.Key}");
+    using var end = SeedMap.Api.Create(new(123, legacy.Id, 1, 64));
+    Assert(SeedMap.Api.Generate(end, -16000, 24000, 8, 8, 16, 64).All(id => id == 9),
+        $"End public biome projection {legacy.Key}");
+}
+foreach (string release in new[] { "1.7.10", "1.8.9", "1.9.4" })
+{
+    int id = SeedMap.Api.GetVersionCapability(release).NativeId;
+    using var generator = SeedMap.Api.Create(new(-3525218295543650087, id, 0, 64));
+    Assert(SeedMap.Api.QueryRegion(generator, 5, 1, -1) is { X: 640, Z: -240 },
+        $"sizeable village survives early biome shortcut {release}");
+}
+using (var generator = SeedMap.Api.Create(new(-1, SeedMap.Api.GetVersionCapability("1.12.2").NativeId, 0, 64)))
+    Assert(SeedMap.Api.QueryRegion(generator, 3, 3, 0) is { X: 1568, Z: 160 }, "witch hut block8 biome check");
+Assert(SeedMap.Api.GetVersionCapability("1.3.1").Strongholds == VersionSupportStatus.Experimental &&
+    SeedMap.Api.GetVersionCapability("1.4.2").Strongholds == VersionSupportStatus.Supported,
+    "historical IntCache verification limit");
+foreach (var sample in new[]
+{
+    (Release: "1.4.2", Seed: 0L, Dimension: 0, Type: 1, Rx: 3, Rz: 3, X: 1760, Z: 1856),
+    (Release: "1.9.4", Seed: 0L, Dimension: 1, Type: 20, Rx: -6, Rz: -6, X: -1808, Z: -1824),
+    (Release: "1.12.2", Seed: 0L, Dimension: 1, Type: 20, Rx: -3, Rz: -6, X: -880, Z: -1872),
+    (Release: "1.9.4", Seed: 0L, Dimension: 1, Type: 20, Rx: -93000, Rz: -93000, X: -29759952, Z: -29759936),
+    (Release: "1.12.2", Seed: 123L, Dimension: 1, Type: 20, Rx: 93000, Rz: -93000, X: 29760096, Z: -29759920)
+})
+{
+    using var generator = SeedMap.Api.Create(new(sample.Seed,
+        SeedMap.Api.GetVersionCapability(sample.Release).NativeId, sample.Dimension, 64));
+    Assert(SeedMap.Api.QueryRegion(generator, sample.Type, sample.Rx, sample.Rz) is { } hit &&
+        hit.X == sample.X && hit.Z == sample.Z, $"legacy Java structure boundary {sample.Release}/{sample.Type}");
+}
+foreach (var sample in new[]
+{
+    (Release: "1.2.5", X: -56, Z: -64, Exists: true),
+    (Release: "1.4.7", X: -56, Z: -64, Exists: false),
+    (Release: "1.7.10", X: -56, Z: -64, Exists: false),
+    (Release: "1.2.5", X: 11, Z: -63, Exists: false),
+    (Release: "1.4.7", X: 11, Z: -63, Exists: true),
+    (Release: "1.7.10", X: 11, Z: -63, Exists: false)
+})
+{
+    using var generator = SeedMap.Api.Create(new(0, SeedMap.Api.GetVersionCapability(sample.Release).NativeId, 0, 64));
+    Assert((SeedMap.Api.QueryRegion(generator, 15, sample.X, sample.Z) is not null) == sample.Exists,
+        $"legacy mineshaft RNG {sample.Release}/{sample.X}/{sample.Z}");
+}
+using (var earlier = new Engine(new(123, SeedMap.Api.GetVersionCapability("1.3.1").NativeId, 0, 64)))
+using (var later = new Engine(new(123, SeedMap.Api.GetVersionCapability("1.4.2").NativeId, 0, 64)))
+{
+    var key = new Engine.TileKey(4, -1, 0);
+    var a = await earlier.TileAsync(key, CancellationToken.None);
+    var b = await later.TileAsync(key, CancellationToken.None);
+    Assert(!ReferenceEquals(a, b) && ReferenceEquals(a, await earlier.TileAsync(key, CancellationToken.None)),
+        "equivalent release profiles retain independent world caches");
+    using var cancelled = new CancellationTokenSource(); cancelled.Cancel();
+    try { await later.TileAsync(key, cancelled.Token); throw new Exception("legacy cached cancellation"); }
+    catch (OperationCanceledException) { }
+}
 Console.WriteLine("PASS version/profile capability matrix");
 // Independent Java Random and signed int overflow implementation for slime chunks.
 static bool SlimeJava(long seed, int x, int z)

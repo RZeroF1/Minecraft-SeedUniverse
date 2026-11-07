@@ -7,7 +7,7 @@
 | 项目 | 内容 |
 |---|---|
 | 包 ID | `RZeroF1.Minecraft.SeedMap` |
-| 当前源码版本 | `0.2.1` |
+| 当前源码版本 | `0.2.2` |
 | 目标框架 | `net10.0` |
 | 原生运行时 | `win-x64` |
 | 项目许可证 | MPL-2.0 |
@@ -27,7 +27,7 @@ NuGet 包的已发布版本以 [nuget.org](https://www.nuget.org/packages/RZeroF
 </PropertyGroup>
 
 <ItemGroup>
-  <PackageReference Include="RZeroF1.Minecraft.SeedMap" Version="0.2.1" />
+  <PackageReference Include="RZeroF1.Minecraft.SeedMap" Version="0.2.2" />
 </ItemGroup>
 ```
 
@@ -49,6 +49,7 @@ docs/
     api.md
     architecture.md
     nuget.md
+    versions.md
 LICENSE
 THIRD-PARTY-NOTICES.md
 licenses/cubiomes/
@@ -71,6 +72,8 @@ dotnet pack src/RZeroF1.Minecraft.SeedMap.Core/RZeroF1.Minecraft.SeedMap.Core.cs
 
 包输出到 `artifacts/packages/`。构建过程调用本地 Native 构建脚本，使用固定的 Cubiomes 源码；指定 `win-x86`、`win-arm64` 或其他运行时会失败。
 
+当前源码包含 89 个发行版本条目，第三范围 46 版逐版状态见 [版本矩阵](versions.md)。原版 JAR、Mapping、Oracle 与实验数据不进入包；消费端运行无需 Java。
+
 版本能力由包内 `Api.VersionCapabilities` 返回。实验性 profile 会随 Native 资产编译并可用于研究或受控场景，但其结构或版本 oracle 尚未完成时，消费端应按能力状态关闭对应功能。
 
 ## 独立包消费验证
@@ -82,7 +85,7 @@ dotnet restore tests/PackageConsumer/PackageConsumer.csproj -r win-x64 --configf
 dotnet run --project tests/PackageConsumer/PackageConsumer.csproj -c Release -r win-x64 --no-restore
 ```
 
-程序验证瓦片、结构查询、相机、BGRA 转换与 Native 修订号。重复打包同一版本进行本地开发验证时，应换用新的缓存目录；准备发布的产物则从最终提交重新构建。
+程序验证瓦片、结构查询、相机、BGRA 转换与 Native 修订号，检查全部 46 个旧版入口，并输出实际加载的托管程序集、Native DLL 路径和 SHA-256。重复打包同一版本进行本地开发验证时，应换用新的缓存目录；准备发布的产物则从最终提交重新构建。
 
 ## 发布流程
 

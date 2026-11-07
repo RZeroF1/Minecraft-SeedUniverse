@@ -19,11 +19,12 @@ The detailed guides are maintained in Simplified Chinese.
 ## Capabilities
 
 - Package ID: `RZeroF1.Minecraft.SeedMap`
-- Source version: `0.2.1`
+- Source version: `0.2.2`
 - Target framework: `.NET 10`
 - Native runtime: Windows `win-x64`
-- Minecraft Java release catalog: 43 release entries covering `1.13.2`–`1.21.11`, backed by 14 unique algorithm profiles
-- Version status: existing `1.16.5`–`1.21.3` Native profiles remain supported; `1.13.2`–`1.16.1` and their patch aliases are Native-smoke/experimental profiles; `1.21.5` has a verified biome JAR comparison but experimental structures; `1.21.11` still lacks a game oracle
+- Minecraft Java release catalog: 89 entries: all 46 official releases from `1.2.5` through `1.12.2`, plus the existing 43 entries from `1.13.2` through `1.21.11`; see the [version matrix](docs/versions.md)
+- Legacy verification: every exact release has game-JAR biome, dimension and structure-candidate checks. Stronghold cache history in 1.2.5, 1.3.1 and 1.3.2 remains experimental. Candidate support does not include full block generation.
+- Existing version status: existing `1.16.5`–`1.21.3` Native profiles remain supported; `1.13.2`–`1.16.1` and their patch aliases are Native-smoke/experimental profiles; `1.21.5` has a verified biome JAR comparison but experimental structures; `1.21.11` still lacks a game oracle
 - Dimensions: Overworld `0`, Nether `-1`, End `1`
 - Sampling steps: `1`, `4`, `16`, `64`, `256` blocks
 - Cubiomes revision: base `e61f90580cbdd883214a8054670dacae655e59c0` with PR #162 changes at `ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2`
@@ -53,7 +54,7 @@ Add the package to a .NET 10 project and explicitly target Windows x64:
 </PropertyGroup>
 
 <ItemGroup>
-  <PackageReference Include="RZeroF1.Minecraft.SeedMap" Version="0.2.1" />
+  <PackageReference Include="RZeroF1.Minecraft.SeedMap" Version="0.2.2" />
 </ItemGroup>
 ```
 

@@ -26,11 +26,13 @@ SeedMap 面向 .NET 10 消费端提供可复用的数据、计算、几何和图
        固定修订版 Cubiomes C 源码
 ```
 
-`World`、`Bounds`、群系与结构元数据、会话模型和渲染几何类型均定义在 `RZeroF1.Minecraft.SeedMap` 命名空间下，供不同消费端复用。`0.2.1` 延续 `0.2.0` 的公共 API 与计算行为。
+`World`、`Bounds`、群系与结构元数据、会话模型和渲染几何类型均定义在 `RZeroF1.Minecraft.SeedMap` 命名空间下，供不同消费端复用。`0.2.2` 保留既有调用方式，新增第三范围发行版本和分功能验证状态。
 
 ## Native 调用与资源
 
 `native/cubiomes/seedmap.c` 和 `seedmap.h` 定义 C ABI 适配层，固定版本的 Cubiomes 源码位于 `native/cubiomes/upstream/`。托管层首次读取能力表时验证 ABI 版本与 Cubiomes 修订号，不匹配时抛出异常。发行版本通过 `VersionCapability` 映射到可复用的 Biome/Structure profile；多个发行版本可以共享一个 profile，但能力状态和验证记录仍按发行版本保存。
+
+第三范围各精确发行版本使用独立稳定 ABI ID 100–145；适配层将发行 ID 映射到经验证的算法参数，ABI ID 不依赖 Cubiomes 枚举顺序。群系与结构 Profile 分开，1.4.2 神殿保留独立规则。Native 修订号包含本地修复标识，构建目标跟踪全部 Native C／H 输入。
 
 每个 Native generator 由 `SafeHandle` 管理，并由一个计算任务独占。同步调用方通过 `using` 释放 generator；异步任务在后台计算中创建并释放自己的 generator。Native DLL 通过 `DllImportSearchPath.AssemblyDirectory` 加载。
 
@@ -39,6 +41,8 @@ SeedMap 面向 .NET 10 消费端提供可复用的数据、计算、几何和图
 `Engine` 绑定一个 `World`，为瓦片、结构和附近群系搜索共用两个并发工作槽。调用方取消令牌与引擎生命周期令牌连接，等待工作槽及分批计算时检查取消状态。
 
 `TileAsync` 返回固定 `128 × 128` 的群系 ID 数组。瓦片起点为 `(TileKey.X * 128 * Step, TileKey.Z * 128 * Step)`；相邻瓦片使用同一采样网格。每个数组占用 `65_536` 字节，瓦片缓存按数组数据大小计入 48 MiB LRU 预算，最多容纳 768 个瓦片，不包含字典等管理开销。
+
+不同发行版本即使算法等价，仍使用各自的 World 和 Engine 缓存；切换版本时创建新 Engine，不跨世界共享瓦片、结构和强要塞缓存。
 
 结构区域缓存最多保存 8192 个查询结果，要塞位置在同一引擎内复用。结构查询按候选区域数量限制工作量，通过结果的 `Limited` 字段告知消费端。`Dispose()` 取消剩余工作并清空缓存，已返回的数组仍由消费端持有。
 

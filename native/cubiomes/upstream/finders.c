@@ -362,7 +362,9 @@ int getMineshafts(int mc, uint64_t seed, int cx0, int cz0, int cx1, int cz1,
             else
             {
                 skipNextN(&s, 1);
-                if unlikely(nextDouble(&s) < 0.004)
+                // Legacy releases changed both probability and RNG consumption.
+                if unlikely(mc <= MC_1_3 ? nextInt(&s, 100) == 0 :
+                    nextDouble(&s) < (mc <= MC_1_6 ? 0.01 : 0.004))
                 {
                     int d = i;
                     if (-i > d) d = -i;
@@ -1507,6 +1509,32 @@ int isViableStructurePos(int structureType, Generator *g, int x, int z, uint32_t
 
     // Overworld
 
+    // 1.4.2 retains a quart predicate and an unconditional pyramid fallback,
+    // but adds jungle hills and swamp huts to the original 1.3 rules.
+    if ((g->flags & LEGACY_TEMPLE_142) &&
+        (structureType == Desert_Pyramid || structureType == Jungle_Pyramid ||
+         structureType == Swamp_Hut))
+    {
+        int q = getBiomeAt(g, 4, chunkX*4+2, 0, chunkZ*4+2);
+        if (q != desert && q != desert_hills && q != jungle &&
+            q != jungle_hills && q != swamp) return 0;
+        int b = getBiomeAt(g, 1, chunkX*16+8, 0, chunkZ*16+8);
+        int kind = b == jungle || b == jungle_hills ? Jungle_Pyramid :
+                   b == swamp ? Swamp_Hut : Desert_Pyramid;
+        return kind == structureType;
+    }
+
+    // 1.3 checks the quart biome first; its Start then selects jungle only
+    // for an exact block jungle, otherwise it unconditionally builds a pyramid.
+    if (g->mc == MC_1_3 &&
+        (structureType == Desert_Pyramid || structureType == Jungle_Pyramid))
+    {
+        int q = getBiomeAt(g, 4, chunkX*4+2, 0, chunkZ*4+2);
+        if (q != desert && q != desert_hills && q != jungle) return 0;
+        int b = getBiomeAt(g, 1, chunkX*16+8, 0, chunkZ*16+8);
+        return structureType == Jungle_Pyramid ? b == jungle : b != jungle;
+    }
+
     Layer lbiome, lshore, *entry = 0;
     int data[2] = { structureType, g->mc };
 
@@ -1517,9 +1545,12 @@ int isViableStructurePos(int structureType, Generator *g, int x, int z, uint32_t
         entry = g->entry;
 
         g->ls.layers[L_BIOME_256].data = (void*) data;
-        g->ls.layers[L_BIOME_256].getMap = mapViableBiome;
+        // In 1.8 these shortcuts reject valid single-block monument centers.
+        if (g->mc != MC_1_8 || structureType != Monument)
+            g->ls.layers[L_BIOME_256].getMap = mapViableBiome;
         g->ls.layers[L_SHORE_16].data = (void*) data;
-        g->ls.layers[L_SHORE_16].getMap = mapViableShore;
+        if (g->mc != MC_1_8 || structureType != Monument)
+            g->ls.layers[L_SHORE_16].getMap = mapViableShore;
     }
 
     switch (structureType)
@@ -1542,8 +1573,8 @@ L_feature:
         if (g->mc <= MC_1_15)
         {
             g->entry = &g->ls.layers[L_VORONOI_1];
-            sampleX = chunkX * 16 + 9;
-            sampleZ = chunkZ * 16 + 9;
+            sampleX = chunkX * 16 + (g->mc <= MC_1_12 ? 8 : 9);
+            sampleZ = chunkZ * 16 + (g->mc <= MC_1_12 ? 8 : 9);
         }
         else
         {
@@ -1597,16 +1628,8 @@ L_feature:
                 goto L_not_viable;
             if (flags && (uint32_t) id != flags)
                 goto L_not_viable;
-            if (g->mc <= MC_1_9)
-            {   // before MC_1_10 villages did not spread into invalid biomes,
-                // which could cause them to fail to generate on the first
-                // check at block (2, 2) in the starting chunk
-                sampleX = chunkX * 16 + 2;
-                sampleZ = chunkZ * 16 + 2;
-                id = getBiomeAt(g, 1, sampleX, 0, sampleZ);
-                if (id < 0 || !isViableFeatureBiome(g->mc, structureType, id))
-                    goto L_not_viable;
-            }
+            // This returns a canSpawn candidate. A block (2,2) shortcut is
+            // insufficient to reject a sizeable vanilla village Start.
             viable = id; // biome for viablility, useful for further analysis
             goto L_viable;
         }
@@ -1874,12 +1897,47 @@ int getSurfaceHeight(
 void sampleNoiseColumnEnd(double column[], const SurfaceNoise *sn,
         const EndNoise *en, int x, int z, int colymin, int colymax);
 
+static int legacyEndCityHeight(const EndNoise *en, const SurfaceNoise *sn,
+        int x, int z)
+{
+    enum { y0 = 14, y1 = 18, yn = y1-y0+1 };
+    double a[yn], b[yn], c[yn], d[yn];
+    int cx = x >> 3, cz = z >> 3;
+    sampleNoiseColumnEnd(a, sn, en, cx, cz, y0, y1);
+    sampleNoiseColumnEnd(b, sn, en, cx, cz+1, y0, y1);
+    sampleNoiseColumnEnd(c, sn, en, cx+1, cz, y0, y1);
+    sampleNoiseColumnEnd(d, sn, en, cx+1, cz+1, y0, y1);
+    return getSurfaceHeight(a, b, c, d, y0, y1, 4,
+            (x & 7)/8.0, (z & 7)/8.0) + 1;
+}
+
 int isViableEndCityTerrain(const Generator *g, const SurfaceNoise *sn,
         int blockX, int blockZ)
 {
     const EndNoise *en = &g->en;
     int chunkX = blockX >> 4;
     int chunkZ = blockZ >> 4;
+    if (g->mc <= MC_1_12)
+    {
+        // 1.11-1.12 ChunkPrimer.findGroundBlockIdx reads the next Z column
+        // and reports its block height + 1. Preserve the vanilla index bug.
+        uint64_t rng;
+        int32_t rotationSeed = (int32_t)((uint32_t)chunkX +
+                (uint32_t)chunkZ * 10387313U);
+        setSeed(&rng, (int64_t)rotationSeed);
+        int rotation = nextInt(&rng, 4);
+        int dx = rotation == 1 || rotation == 2 ? -5 : 5;
+        int dz = rotation == 2 || rotation == 3 ? -5 : 5;
+        int x = chunkX*16+7, z = chunkZ*16+8;
+        int h = legacyEndCityHeight(en, sn, x, z);
+        int h1 = legacyEndCityHeight(en, sn, x, z+dz);
+        int h2 = legacyEndCityHeight(en, sn, x+dx, z);
+        int h3 = legacyEndCityHeight(en, sn, x+dx, z+dz);
+        if (h1 < h) h = h1;
+        if (h2 < h) h = h2;
+        if (h3 < h) h = h3;
+        return h >= 60 ? h : 0;
+    }
     blockX = chunkX * 16 + 7;
     blockZ = chunkZ * 16 + 7;
     int cellx = (blockX >> 3);

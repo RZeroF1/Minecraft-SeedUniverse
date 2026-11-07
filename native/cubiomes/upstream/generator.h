@@ -10,6 +10,7 @@ enum
     LARGE_BIOMES            = 0x1,
     NO_BETA_OCEAN           = 0x2,
     FORCE_OCEAN_VARIANTS    = 0x4,
+    LEGACY_TEMPLE_142       = 0x100, // exact 1.4.2 quart predicate/component rules
 };
 
 STRUCT(Generator)

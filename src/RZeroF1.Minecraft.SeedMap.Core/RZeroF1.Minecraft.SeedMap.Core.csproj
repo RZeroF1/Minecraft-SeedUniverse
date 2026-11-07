@@ -9,7 +9,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IsPackable>true</IsPackable>
     <PackageId>RZeroF1.Minecraft.SeedMap</PackageId>
-    <PackageVersion Condition="'$(PackageVersion)' == ''">0.2.1</PackageVersion>
+    <PackageVersion Condition="'$(PackageVersion)' == ''">0.2.2</PackageVersion>
     <Version Condition="'$(Version)' == ''">$(PackageVersion)</Version>
     <Authors>RZeroF1</Authors>
     <Description>面向 Minecraft Java 世界计算、地图瓦片、结构查询与离屏渲染的纯能力 SeedMap SDK。</Description>
@@ -20,7 +20,7 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/RZeroF1/WinUI-Minecraft-SeedMap</RepositoryUrl>
     <PackageProjectUrl>https://github.com/RZeroF1/WinUI-Minecraft-SeedMap</PackageProjectUrl>
-    <PackageReleaseNotes>新增版本到 Native Profile 的能力目录，接入 1.13.2、1.14.4、1.15.2、1.16.1、1.21.5 和实验性 1.21.11；保留现有正式版本并标注群系、结构、维度和验证状态；同步 PR #162 的 Cubiomes 1.21.5 profile、中文 API、架构与 NuGet 文档。</PackageReleaseNotes>
+    <PackageReleaseNotes>接入 Minecraft Java 1.2.5–1.12.2 全部 46 个正式发行版本，逐版验证群系、维度、结构候选与强要塞；修正旧版矿井、神殿、村庄、Monument 和末地城边界，分离末地公开群系语义；保留既有版本行为并公开分功能验证等级。</PackageReleaseNotes>
     <PackageOutputPath>$(RepositoryRoot)\artifacts\packages\</PackageOutputPath>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
@@ -37,7 +37,7 @@
     <None Include="$(RepositoryRoot)\README.en.md" Pack="true" PackagePath="" />
     <None Include="$(RepositoryRoot)\LICENSE" Pack="true" PackagePath="" />
     <None Include="$(RepositoryRoot)\THIRD-PARTY-NOTICES.md" Pack="true" PackagePath="" />
-    <None Include="$(RepositoryRoot)\docs\api.md;$(RepositoryRoot)\docs\architecture.md;$(RepositoryRoot)\docs\nuget.md"
+    <None Include="$(RepositoryRoot)\docs\api.md;$(RepositoryRoot)\docs\architecture.md;$(RepositoryRoot)\docs\nuget.md;$(RepositoryRoot)\docs\versions.md"
           Pack="true" PackagePath="docs" />
     <None Include="$(RepositoryRoot)\licenses\cubiomes\LICENSE" Pack="true" PackagePath="licenses\cubiomes" />
     <None Include="$(RepositoryRoot)\licenses\cubiomes\SOURCE.md" Pack="true" PackagePath="licenses\cubiomes" />
@@ -47,9 +47,13 @@
           PackagePath="runtimes\win-x64\native" />
   </ItemGroup>
 
+  <ItemGroup>
+    <SeedMapNativeSources Include="$(MSBuildProjectDirectory)\..\..\native\cubiomes\**\*.c;$(MSBuildProjectDirectory)\..\..\native\cubiomes\**\*.h;$(MSBuildProjectDirectory)\..\..\native\cubiomes\build.cmd" />
+  </ItemGroup>
+
   <Target Name="BuildSeedMapNative"
           BeforeTargets="PrepareForBuild"
-          Inputs="$(MSBuildProjectDirectory)\..\..\native\cubiomes\seedmap.c;$(MSBuildProjectDirectory)\..\..\native\cubiomes\seedmap.h;$(MSBuildProjectDirectory)\..\..\native\cubiomes\build.cmd"
+          Inputs="@(SeedMapNativeSources)"
           Outputs="$(TargetDir)rzero_seedmap.dll"
           Condition="'$(SeedMapNativeRid)' == 'win-x64'">
     <MakeDir Directories="$(TargetDir)" />

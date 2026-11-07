@@ -9,7 +9,9 @@ namespace RZeroF1.Minecraft.SeedMap;
 
 public sealed record VersionInfo(int Id, string Key, int Dimensions);
 public enum VersionSupportStatus { Unsupported, NativeSmokeOnly, Experimental, Supported }
-public enum VersionVerificationStatus { None, NativeSmoke, GameJarBiomesAndDimensions }
+public enum VersionVerificationStatus { None, NativeSmoke, GameJarBiomesAndDimensions, GameJarAlgorithms }
+public sealed record StructureCapability(int Id, string Key, VersionSupportStatus Candidates,
+    VersionSupportStatus Terrain, VersionSupportStatus FullGeneration);
 public sealed record VersionCapability(
     string ReleaseKey,
     string BiomeProfileKey,
@@ -20,7 +22,11 @@ public sealed record VersionCapability(
     VersionSupportStatus Structures,
     VersionSupportStatus Dimensions,
     VersionVerificationStatus Verification,
-    string Notes);
+    string Notes)
+{
+    public VersionSupportStatus Strongholds { get; init; } = VersionSupportStatus.Unsupported;
+    public IReadOnlyList<StructureCapability> StructureCapabilities { get; init; } = Array.Empty<StructureCapability>();
+}
 public sealed record BiomeInfo(int Id, string Key, string Name, uint Color);
 public sealed record StructureInfo(int Id, string Key, string Name, int RegionBlocks);
 public readonly record struct World(long Seed, int Version, int Dimension, int Y);
@@ -31,12 +37,12 @@ public readonly record struct Bounds(int MinX, int MinZ, int MaxX, int MaxZ)
 public sealed record StructureHit(int Type, int X, int Z, int Flags);
 
 /// <summary>提供类型化、带版本校验的 Cubiomes ABI 调用；每个计算任务独占自己的 Native generator。</summary>
-public static class Api
+public static partial class Api
 {
     private const string Library = "rzero_seedmap";
     public const int WorldLimit = 30_000_000;
     public const int AbiVersion = 1;
-    public const string Revision = "ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2";
+    public const string Revision = "ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2+legacy46.1";
     private static readonly Lazy<VersionInfo[]> NativeCapabilities = new(InitializeNative);
     private static readonly Lazy<VersionInfo[]> Capabilities = new(InitializeReleaseCatalog);
     private static readonly Lazy<VersionCapability[]> VersionCapabilityTable = new(InitializeVersionCapabilities);
@@ -181,18 +187,33 @@ public static class Api
             if (!native.TryGetValue(pair.Value, out var profile))
                 throw new InvalidOperationException($"发行版本 {pair.Key} 引用的 Native profile {pair.Value} 不存在。");
             return new VersionInfo(profile.Id, pair.Key, profile.Dimensions);
-        }).ToArray();
+        }).Concat(LegacyReleases.Select(release =>
+        {
+            if (!native.TryGetValue(release, out var profile))
+                throw new InvalidOperationException($"发行版本 {release} 缺少 Native 入口。");
+            return new VersionInfo(profile.Id, release, profile.Dimensions);
+        })).ToArray();
     }
 
     private static VersionCapability[] InitializeVersionCapabilities()
     {
         return Versions.Select(version =>
         {
+            if (version.Id is >= 100 and < 146) return LegacyCapability(version);
             if (!Definitions.TryGetValue(version.Key, out var definition))
                 throw new InvalidOperationException($"版本 {version.Key} 缺少能力定义。");
             return new VersionCapability(version.Key, definition.BiomeProfileKey, definition.StructureProfileKey, version.Id,
                 definition.Overall, definition.Biomes, definition.Structures,
-                definition.Dimensions, definition.Verification, definition.Notes);
+                definition.Dimensions, definition.Verification, definition.Notes)
+            {
+                Strongholds = definition.Structures,
+                StructureCapabilities = Array.AsReadOnly(new[] { -1, 0, 1 }
+                    .SelectMany(dimension => Structures(version.Id, dimension))
+                    .Where(structure => structure.Id != 100)
+                    .Select(structure => new StructureCapability(structure.Id, structure.Key,
+                        definition.Structures, VersionSupportStatus.Unsupported, VersionSupportStatus.Unsupported))
+                    .ToArray())
+            };
         }).ToArray();
     }
 
@@ -319,6 +340,7 @@ public static class Api
         "sunflower_plains" => "向日葵平原",
         "desert" => "沙漠",
         "mountains" => "山地",
+        "mountain_edge" => "山地边缘",
         "forest" => "森林",
         "flower_forest" => "繁花森林",
         "birch_forest" => "桦木森林",

@@ -445,8 +445,12 @@ int mapEndBiome(const EndNoise *en, int *out, int x, int z, int w, int h)
             uint16_t v = 0;
             if (rsq > 4096 && sampleSimplex2D(&en->perlin, rx, rz) < -0.9f)
             {
-                //v = (llabs(rx) * 3439 + llabs(rz) * 147) % 13 + 9;
-                v = (unsigned int)(
+                // Legacy Java applies float remainder before conversion. At
+                // distant coordinates the sum exceeds the uint32 range.
+                if (en->mc <= MC_1_12)
+                    v = (uint16_t)fmodf(fabsf((float)rx) * 3439.0f +
+                            fabsf((float)rz) * 147.0f, 13.0f) + 9;
+                else v = (unsigned int)(
                         fabsf((float)rx) * 3439.0f + fabsf((float)rz) * 147.0f
                     ) % 13 + 9;
                 v *= v;
@@ -541,8 +545,10 @@ float getEndHeightNoise(const EndNoise *en, int x, int z, int range)
             uint16_t v = 0;
             if (rsq > 4096 && sampleSimplex2D(&en->perlin, rx, rz) < -0.9f)
             {
-                //v = (llabs(rx) * 3439 + llabs(rz) * 147) % 13 + 9;
-                v = (unsigned int)(
+                if (en->mc <= MC_1_12)
+                    v = (uint16_t)fmodf(fabsf((float)rx) * 3439.0f +
+                            fabsf((float)rz) * 147.0f, 13.0f) + 9;
+                else v = (unsigned int)(
                         fabsf((float)rx) * 3439.0f + fabsf((float)rz) * 147.0f
                     ) % 13 + 9;
                 rx = (oddx - i * 2);
