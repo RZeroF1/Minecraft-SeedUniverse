@@ -114,7 +114,14 @@ static inline int nextInt(uint64_t *seed, const int n)
 
 static inline uint64_t nextLong(uint64_t *seed)
 {
-    return ((uint64_t) next(seed, 32) << 32) + next(seed, 32);
+    /*
+     * java.util.Random.nextLong() adds the second signed int to the
+     * sign-extended high half. Converting the low half directly to uint64_t
+     * changes the result whenever next(32) has its sign bit set.
+     */
+    int32_t high = next(seed, 32);
+    int32_t low = next(seed, 32);
+    return ((uint64_t)(int64_t)high << 32) + (uint64_t)(int64_t)low;
 }
 
 static inline float nextFloat(uint64_t *seed)

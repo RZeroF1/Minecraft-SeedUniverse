@@ -32,11 +32,13 @@ var cancellationToken = CancellationToken.None;
 | `SeedMap.Api.Generate(...)` | 同步生成指定矩形范围的群系 ID。 |
 | `SeedMap.Api.SampleBiome(...)` | 按 generator 的顺序执行单点原版群系采样，复现现代 Climate 等距离选择中的上次命中状态。 |
 | `SeedMap.Api.ResetBiomeSampling(...)` | 清除该 generator 的有序采样状态，使下一次采样从原版搜索根节点开始。 |
-| `SeedMap.Api.QueryRegion(...)` | 查询指定结构区域，未找到时返回 `null`。 |
+| `SeedMap.Api.QueryRegion(...)` | 查询指定结构区域，未找到时返回 `null`；Experimental 结构的 `null` 只表示当前 SDK 筛选未返回候选。 |
 | `SeedMap.Api.Strongholds(...)` | 查询要塞位置。 |
 | `SeedMap.Api.IsSlimeChunk(seed, chunkX, chunkZ)` | 按区块坐标查询史莱姆区块。 |
 
 `VersionInfo` 表示 Native 能力表中的发行版本和整数 ID；`VersionCapability` 额外表示 `BiomeProfileKey`、`StructureProfileKey`、总体状态、群系状态、结构状态、维度状态和验证状态。发行版本可以共享群系 profile，同时保留独立结构 profile。`StructureCapability` 按实际结构分别报告 `RawPlacement`、`BiomePredicate`、`Candidates`、`GenerationPoint`、`Terrain` 和 `FullGeneration`。Mineshaft 的公开查询只返回 RNG placement，其 BiomePredicate 与 GenerationPoint 因不适用而标为 Unsupported；`FullGeneration` 对所有结构均为 Unsupported。1.18–1.21.11 的 Biome 已为 Supported，结构总体仍按逐结构阶段限制保留 Experimental。完整逐版清单见 [版本矩阵](versions.md)。
+
+`StructureHit.Checks` 说明本次命中实际执行的检查：`BiomePredicate` 表示 Native 执行了结构群系谓词，`ApproximateTerrain` 表示使用了近似地形高度，`ExactTerrain` 表示执行了已复现的末地城高度检查。没有对应标志时，调用方不能把结果解释为该阶段已验证。现代 Ruined Portal 当前不设置 `BiomePredicate`，因为原版会在选择模板和高度后才按 generation stub 的三维坐标筛选群系；现代 Village、Woodland Mansion、Ruined Portal 和 Trail Ruins 的 generation-point 能力仍按矩阵标为 Experimental。
 
 ## 同步群系采样
 
@@ -48,7 +50,7 @@ int[] samples = SeedMap.Api.Generate(
 
 `width`、`height` 是样本数量，`step` 是相邻样本间隔的方块数，可取 `1`、`4`、`16`、`64`、`256`。返回数组按行排列，索引为 `row * width + column`。同一个 generator 应由单个计算任务独占。旧版主世界 scale 1 为方块 Voronoi，4 为 RiverMix，16／64／256 分别为中间 Layer 输出，不能视为对 scale 1 的等距抽样；旧版群系忽略 Y。1.12.2 及以前的公开末地群系始终为 ID 9，内部岛屿分类不向群系目录暴露。
 
-`SampleBiome` 与 `Generate` 使用相同的坐标、维度、步长和边界约定；它为单个 generator 保留 Climate 搜索叶节点，因此调用顺序与原版连续查询一致。每个 generator 必须只由一个任务访问。`Generate` 的瓦片不读取或改变有序采样状态，适用于并行和缓存的随机区域查询。
+`SampleBiome` 与 `Generate` 使用相同的坐标、维度、步长和边界约定；它为单个 generator 保留 Climate 搜索叶节点，因此调用顺序与原版连续查询一致。状态跨该 generator 的 `SampleBiome` 调用保留，创建新 generator 或调用 `ResetBiomeSampling` 后清除。每个 generator 必须只由一个任务访问。`Generate` 的瓦片不读取或改变有序采样状态，结果仅由世界参数和瓦片坐标决定，适用于并行计算、缓存和相邻瓦片拼接；它不承诺复现任意原版有序查询历史中的 tie 选择。结构查询使用各结构自己的位置谓词和 terrain 阶段，不读写此 `SampleBiome` 状态；现代结构的 Experimental 阶段见[版本矩阵](versions.md)。
 
 ## 异步瓦片、结构与搜索
 

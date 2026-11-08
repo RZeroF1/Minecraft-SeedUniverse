@@ -111,7 +111,7 @@ static int64_t floor_div(int64_t a, int b) {
     int64_t q=a/b, r=a%b; return q-(r<0);
 }
 int cm_abi_version(void) { return 1; }
-const char *cm_source_revision(void) { return "ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2+legacy46.1+modern43.2"; }
+const char *cm_source_revision(void) { return "ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2+legacy46.1+modern43.3"; }
 int cm_versions(cm_version *out, int capacity) {
     int n=(int)(sizeof(versions)/sizeof(*versions));
     if (!out) return n;
@@ -226,7 +226,7 @@ int cm_structure_region(void *handle,int type,int rx,int rz,cm_hit *out) {
     if(!g || !out) return CM_INVALID;
     if(!valid_type(type)) return CM_UNSUPPORTED;
     Pos pos;
-    int flags=1;
+    int flags=0;
     if(type==Mineshaft) {
         flags=0; /* Placement only: mine shafts have no biome viability test. */
         if(g->dim!=0) return CM_UNSUPPORTED;
@@ -246,6 +246,11 @@ int cm_structure_region(void *handle,int type,int rx,int rz,cm_hit *out) {
             pos=getFeaturePos(c,g->seed,rx,rz);
         else if(!getStructurePos(type,g->mc,g->seed,rx,rz,&pos)) return 0;
         if(!isViableStructurePos(type,g,pos.x,pos.z,0)) return 0;
+        // Modern ruined portals select a setup, template, rotation and
+        // generation height before the vanilla biome predicate. The current
+        // placement API does not reproduce that height stage.
+        if(type!=Ruined_Portal && type!=Ruined_Portal_N)
+            flags|=1;
         if(!isViableStructureTerrain(type,g,pos.x,pos.z)) return 0;
         if(g->mc>=MC_1_18 && (type==Desert_Pyramid || type==Jungle_Temple || type==Mansion)) flags|=2;
         // The vanilla End City height predicate was added in 1.11.
@@ -253,7 +258,7 @@ int cm_structure_region(void *handle,int type,int rx,int rz,cm_hit *out) {
             SurfaceNoise sn;
             initSurfaceNoise(&sn,DIM_END,g->seed);
             if(!isViableEndCityTerrain(g,&sn,pos.x,pos.z)) return 0;
-            flags|=2;
+            flags|=4;
         }
     }
     if(pos.x < -30000000 || pos.z < -30000000 || pos.x>=30000000 || pos.z>=30000000) return 0;

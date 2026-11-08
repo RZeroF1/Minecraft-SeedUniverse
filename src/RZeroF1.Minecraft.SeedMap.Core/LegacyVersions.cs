@@ -5,10 +5,11 @@ namespace RZeroF1.Minecraft.SeedMap;
 
 public static partial class Api
 {
-    // Every release has its own stable Native ID and exact-JAR verification.
+    // Public release catalog intentionally keeps 1.2.5/1.3.1/1.3.2 internal;
+    // their stable Native IDs remain available to local regression tooling.
     private static readonly string[] LegacyReleases =
     [
-        "1.2.5", "1.3.1", "1.3.2", "1.4.2", "1.4.4", "1.4.5",
+        "1.4.2", "1.4.4", "1.4.5",
         "1.4.6", "1.4.7", "1.5.1", "1.5.2", "1.6.1", "1.6.2",
         "1.6.4", "1.7.2", "1.7.3", "1.7.4", "1.7.5", "1.7.6",
         "1.7.7", "1.7.8", "1.7.9", "1.7.10", "1.8", "1.8.1",

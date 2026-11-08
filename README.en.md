@@ -22,12 +22,12 @@ The detailed guides are maintained in Simplified Chinese.
 - Source version: `0.2.2`
 - Target framework: `.NET 10`
 - Native runtime: Windows `win-x64`
-- Minecraft Java release catalog: 89 entries: all 46 official releases from `1.2.5` through `1.12.2`, plus the existing 43 entries from `1.13.2` through `1.21.11`; see the [version matrix](docs/versions.md)
-- Exact-JAR verification: all 43 releases from 1.13.2 through 1.21.11 and all 46 releases from 1.2.5 through 1.12.2 have independent game-JAR Oracle records. Biomes, dimensions, strongholds, mineshafts, and registered structure candidate stages for 1.13.2–1.17.1 are Supported; full structure block generation remains outside the support boundary.
+- Minecraft Java public release catalog: 86 entries: 43 historical releases from `1.4.2` through `1.12.2`, plus the existing 43 entries from `1.13.2` through `1.21.11`; exact Native IDs for `1.2.5`, `1.3.1`, and `1.3.2` remain available to internal regression tooling; see the [version matrix](docs/versions.md)
+- Exact-JAR verification: the 86 public releases and the three internally retained releases from 1.2.5 through 1.3.2 have independent game-JAR Oracle records. Biomes, dimensions, strongholds, mineshafts, and registered structure candidate stages for 1.13.2–1.17.1 are Supported; full structure block generation remains outside the support boundary.
 - Modern version status: Biomes for 1.18–1.21.11 are Supported after 234,864 ordered exact-JAR samples per release, with zero mismatches across all 27 releases. Structure capability remains stage-specific and Experimental where exact candidate or terrain behavior is unresolved.
 - Dimensions: Overworld `0`, Nether `-1`, End `1`
 - Sampling steps: `1`, `4`, `16`, `64`, `256` blocks
-- Cubiomes revision: base `e61f90580cbdd883214a8054670dacae655e59c0` with PR #162 changes at `ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2` and local `legacy46.1+modern43.2` adaptations
+- Cubiomes revision: base `e61f90580cbdd883214a8054670dacae655e59c0` with PR #162 changes at `ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2` and local `legacy46.1+modern43.3` adaptations
 
 ```text
 Host UI / image framework

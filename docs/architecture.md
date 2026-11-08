@@ -26,13 +26,13 @@ SeedMap 面向 .NET 10 消费端提供可复用的数据、计算、几何和图
        固定修订版 Cubiomes C 源码
 ```
 
-`World`、`Bounds`、群系与结构元数据、会话模型和渲染几何类型均定义在 `RZeroF1.Minecraft.SeedMap` 命名空间下，供不同消费端复用。`0.2.2` 保留既有调用方式，新增 43 个现代发行版本、46 个历史发行版本和分功能验证状态。
+`World`、`Bounds`、群系与结构元数据、会话模型和渲染几何类型均定义在 `RZeroF1.Minecraft.SeedMap` 命名空间下，供不同消费端复用。`0.2.2` 保留既有调用方式，提供 43 个现代发行版本、43 个公开历史发行版本和 3 个仅供内部回归的历史 Native ID，并按功能报告验证状态。
 
 ## Native 调用与资源
 
 `native/cubiomes/seedmap.c` 和 `seedmap.h` 定义 C ABI 适配层，固定版本的 Cubiomes 源码位于 `native/cubiomes/upstream/`。托管层首次读取能力表时验证 ABI 版本与 Cubiomes 修订号，不匹配时抛出异常。发行版本通过 `VersionCapability` 映射到可复用的 Biome/Structure profile；多个发行版本可以共享一个 profile，但能力状态和验证记录仍按发行版本保存。
 
-历史发行版本使用独立稳定 ABI ID 100–145；现代发行版保留原有身份并新增精确分界 ID，适配层将发行 ID 映射到经验证的算法参数，ABI ID 不依赖 Cubiomes 枚举顺序。群系与结构 Profile 分开，1.4.2 神殿、1.14 前哨站、1.18 depth 和 1.21 强要塞偏好保留独立规则。Native 修订号包含本地修复标识，构建目标跟踪全部 Native C／H 输入。
+历史发行版本使用独立稳定 ABI ID 100–145；其中 100–102 保留给内部精确回归，公开目录从 103 开始。现代发行版保留原有身份并新增精确分界 ID，适配层将发行 ID 映射到经验证的算法参数，ABI ID 不依赖 Cubiomes 枚举顺序。群系与结构 Profile 分开，1.4.2 神殿、1.14 前哨站、1.18 depth 和 1.21 强要塞偏好保留独立规则。Native 修订号包含本地修复标识，构建目标跟踪全部 Native C／H 输入。
 
 每个 Native generator 由 `SafeHandle` 管理，并由一个计算任务独占。同步调用方通过 `using` 释放 generator；异步任务在后台计算中创建并释放自己的 generator。Native DLL 通过 `DllImportSearchPath.AssemblyDirectory` 加载。
 

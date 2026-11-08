@@ -1288,7 +1288,8 @@ int isViableFeatureBiome(int mc, int structureType, int biomeID)
 
     case Mansion:
         if (mc <= MC_1_10) return 0;
-        return biomeID == dark_forest || biomeID == dark_forest_hills;
+        return biomeID == dark_forest || biomeID == dark_forest_hills ||
+               (mc >= MC_1_21_5 && biomeID == pale_garden);
 
     case Fortress:
         return (biomeID == nether_wastes || biomeID == soul_sand_valley ||

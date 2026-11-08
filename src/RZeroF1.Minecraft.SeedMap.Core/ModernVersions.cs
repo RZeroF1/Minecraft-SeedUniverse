@@ -37,10 +37,16 @@ public static partial class Api
                     (establishedModernQuery || structure.Id is not (5 or 9 or 11 or 23));
                 bool exactGenerationPoint = structure.Id != 15 &&
                     (establishedModernQuery || structure.Id is not (5 or 9 or 11 or 23));
+                VersionSupportStatus terrain = structure.Id is 1 or 2 or 9
+                    ? VersionSupportStatus.Experimental
+                    : (!establishedModernQuery && (structure.Id is 5 or 11 or 23))
+                        ? VersionSupportStatus.Experimental
+                        : structure.Id == 20
+                            ? VersionSupportStatus.Supported
+                            : VersionSupportStatus.Unsupported;
                 var capability = new StructureCapability(structure.Id, structure.Key,
                     exactCandidate ? VersionSupportStatus.Supported : VersionSupportStatus.Experimental,
-                    structure.Id is 1 or 2 or 9 ? VersionSupportStatus.Experimental :
-                        structure.Id == 20 ? VersionSupportStatus.Supported : VersionSupportStatus.Unsupported,
+                    terrain,
                     VersionSupportStatus.Unsupported)
                 {
                     RawPlacement = VersionSupportStatus.Supported,

@@ -1,5 +1,7 @@
 param(
+    [string] $PackagePath,
     [string] $PackageDirectory,
+    [string] $PackageVersion,
     [string[]] $OutputDirectory = @(),
     [switch] $CheckTracked
 )
@@ -25,10 +27,48 @@ if ($CheckTracked) {
     if ($LASTEXITCODE -ne 1) { throw 'Staged content privacy check failed.' }
     Write-Host "Checked $($tracked.Count) tracked paths."
 }
-if ($PackageDirectory) {
+if ($PackagePath -and $PackageDirectory) {
+    throw 'Specify only one of -PackagePath or -PackageDirectory.'
+}
+$packageInput = if ($PackagePath) { $PackagePath } else { $PackageDirectory }
+if ($packageInput) {
     Add-Type -AssemblyName System.IO.Compression
     Add-Type -AssemblyName System.IO.Compression.FileSystem
-    $packages = @(Get-ChildItem -LiteralPath $PackageDirectory -File | Where-Object { $_.Extension -in '.nupkg', '.snupkg' })
+
+    $inputItem = Get-Item -LiteralPath $packageInput
+    if ($inputItem.PSIsContainer) {
+        if (-not $PackageVersion) {
+            $projectFile = Join-Path $root 'src/RZeroF1.Minecraft.SeedMap.Core/RZeroF1.Minecraft.SeedMap.Core.csproj'
+            if (-not (Test-Path -LiteralPath $projectFile)) {
+                throw 'Package directory input requires -PackageVersion when the SDK project file is unavailable.'
+            }
+            $projectText = Get-Content -LiteralPath $projectFile -Raw
+            $versionMatch = [regex]::Match(
+                $projectText,
+                '(?s)<PackageVersion\b[^>]*>\s*(?<version>[^<\s]+)\s*</PackageVersion>')
+            if (-not $versionMatch.Success) {
+                throw 'Package directory input requires -PackageVersion because PackageVersion was not found.'
+            }
+            $PackageVersion = $versionMatch.Groups['version'].Value
+        }
+
+        $packagePrefix = 'RZeroF1.Minecraft.SeedMap.'
+        $packagePattern = '^' + [regex]::Escape($packagePrefix) +
+            [regex]::Escape($PackageVersion) + '\.(nupkg|snupkg)$'
+        $packages = @(Get-ChildItem -LiteralPath $inputItem.FullName -File |
+            Where-Object { $_.Name -match $packagePattern })
+        if (-not $packages.Count) {
+            throw "No package for current SDK version was found in the supplied directory."
+        }
+        Write-Host "Selected package version $PackageVersion."
+    }
+    else {
+        if ($inputItem.Extension -notin '.nupkg', '.snupkg') {
+            throw 'PackagePath must point to a .nupkg, .snupkg, or a package output directory.'
+        }
+        $packages = @($inputItem)
+    }
+
     if (-not $packages.Count) { throw 'No packages found.' }
     $payload = @(
         'lib/net10.0/RZeroF1.Minecraft.SeedMap.dll',

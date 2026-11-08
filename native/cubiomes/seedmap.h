@@ -44,8 +44,10 @@ CM_API int cm_biomes(void *handle, int64_t x, int64_t z, int width, int height,
 CM_API int cm_biome_sample(void *handle, int64_t x, int64_t z, int step, int y,
                           uint64_t *search_state, int32_t *out);
 /* One placement region per call; mine shafts use 16x16 block regions.
- * Strongholds use cm_strongholds. Result flags: 1=biome checked,
- * 2=approximate terrain checked. Neither implies block-world certainty. */
+ * Strongholds use cm_strongholds. Result flags: 1=biome predicate checked,
+ * 2=approximate terrain checked, 4=exact End City terrain checked. A
+ * missing flag means that stage was not performed. No flag implies
+ * block-world certainty. */
 CM_API int cm_structure_region(void *handle, int type, int region_x, int region_z, cm_hit *out);
 CM_API int cm_strongholds(void *handle, cm_hit *out, int capacity);
 CM_API int cm_slime(uint64_t seed, int chunk_x, int chunk_z);

@@ -10,6 +10,14 @@ namespace RZeroF1.Minecraft.SeedMap;
 public sealed record VersionInfo(int Id, string Key, int Dimensions);
 public enum VersionSupportStatus { Unsupported, NativeSmokeOnly, Experimental, Supported }
 public enum VersionVerificationStatus { None, NativeSmoke, GameJarBiomesAndDimensions, GameJarAlgorithms }
+[Flags]
+public enum StructureHitChecks
+{
+    None = 0,
+    BiomePredicate = 1,
+    ApproximateTerrain = 2,
+    ExactTerrain = 4
+}
 public sealed record StructureCapability(int Id, string Key, VersionSupportStatus Candidates,
     VersionSupportStatus Terrain, VersionSupportStatus FullGeneration)
 {
@@ -39,7 +47,12 @@ public readonly record struct Bounds(int MinX, int MinZ, int MaxX, int MaxZ)
 {
     public bool Contains(int x, int z) => x >= MinX && x < MaxX && z >= MinZ && z < MaxZ;
 }
-public sealed record StructureHit(int Type, int X, int Z, int Flags);
+/// <summary>表示结构区域查询返回的候选坐标和本次实际执行的阶段检查。</summary>
+public sealed record StructureHit(int Type, int X, int Z, int Flags)
+{
+    /// <summary>将 Native ABI 标志转换为可读的阶段检查集合。</summary>
+    public StructureHitChecks Checks => (StructureHitChecks)Flags;
+}
 
 /// <summary>提供类型化、带版本校验的 Cubiomes ABI 调用；每个计算任务独占自己的 Native generator。</summary>
 public static partial class Api
@@ -47,7 +60,7 @@ public static partial class Api
     private const string Library = "rzero_seedmap";
     public const int WorldLimit = 30_000_000;
     public const int AbiVersion = 1;
-    public const string Revision = "ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2+legacy46.1+modern43.2";
+    public const string Revision = "ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2+legacy46.1+modern43.3";
     private static readonly Lazy<VersionInfo[]> NativeCapabilities = new(InitializeNative);
     private static readonly Lazy<VersionInfo[]> Capabilities = new(InitializeReleaseCatalog);
     private static readonly Lazy<VersionCapability[]> VersionCapabilityTable = new(InitializeVersionCapabilities);
@@ -167,7 +180,7 @@ public static partial class Api
     }
 
     /// <summary>按原版 BiomeSource 的调用顺序采样；现代主世界及下界的等距离 climate 选择会保留本 Generator 上次命中的叶节点。</summary>
-    /// <remarks>Generator 由调用者独占。Generate 的瓦片计算独立于此序列，保持分块和调用顺序无关。</remarks>
+    /// <remarks>状态保存在这个独占的 Generator 上，跨 SampleBiome 调用有效，重建或重置 Generator 后清除。Generate 不读取或修改该状态，因此地图瓦片适合独立计算和缓存，但不复现任意有序查询历史。</remarks>
     public static int SampleBiome(Generator generator, long x, long z, int step, int y)
     {
         ArgumentNullException.ThrowIfNull(generator);
@@ -208,6 +221,11 @@ public static partial class Api
         }).ToArray();
     }
 
+    /// <summary>按 placement、已实现的 biome predicate 和地形筛选查询一个结构区域。</summary>
+    /// <remarks>
+    /// Experimental 结构的 <see langword="null"/> 只表示当前 SDK 算法未返回候选，不能作为原版必定不会生成的结论。
+    /// 命中项的 <see cref="StructureHit.Checks"/> 标明实际执行的检查；ApproximateTerrain 表示使用近似高度筛选。
+    /// </remarks>
     public static StructureHit? QueryRegion(Generator generator, int type, int rx, int rz)
     {
         int rc = cm_structure_region(generator, type, rx, rz, out var hit);

@@ -1,8 +1,8 @@
 # Minecraft Java 发行版本与验证状态
 
-当前源码目录包含 89 个发行版本条目。1.13.2–1.21.11 的 43 个发行版和 1.2.5–1.12.2 的 46 个发行版都使用各自官方 SHA-1 校验客户端完成了独立原版 Java Oracle 对照；消费端运行 SDK 无需 Java 或游戏 JAR。
+当前公开源码目录包含 86 个发行版本条目：1.13.2–1.21.11 的 43 个发行版和 1.4.2–1.12.2 的 43 个发行版。1.2.5、1.3.1、1.3.2 仍保留精确 Native ID、研究资料和本地回归入口，但暂不出现在 `Api.Versions` 与公开能力目录。1.2.5–1.12.2 的 46 个发行版都使用各自官方 SHA-1 校验客户端完成了独立原版 Java Oracle 对照；消费端运行 SDK 无需 Java 或游戏 JAR。
 
-`Supported` 针对对应能力与 DEFAULT 世界参数；结构能力按 RawPlacement、BiomePredicate、Candidates、GenerationPoint、Terrain 和 FullGeneration 阶段分别记录。`Experimental` 表示精确 JAR 对照已发现阶段限制，或该阶段尚无生产等价实现。`Api.Biomes` 是 DEFAULT 可生成群系目录，省略原版注册表中未用于该世界类型的条目。原版完整地形、结构方块落地、升级世界和自定义生成参数不由候选等级覆盖。1.2.5、1.3.1、1.3.2 的强要塞在独立种子基准通过，任意 IntCache 历史状态仍标为 `Experimental`。
+`Supported` 针对对应能力与 DEFAULT 世界参数；结构能力按 RawPlacement、BiomePredicate、Candidates、GenerationPoint、Terrain 和 FullGeneration 阶段分别记录。`Experimental` 表示精确 JAR 对照已发现阶段限制，或该阶段尚无生产等价实现。`Api.Biomes` 是 DEFAULT 可生成群系目录，省略原版注册表中未用于该世界类型的条目。原版完整地形、结构方块落地、升级世界和自定义生成参数不由候选等级覆盖。`StructureHit.Checks` 只报告本次 Native 查询实际执行的阶段检查，未设置的标志不代表该阶段已验证。1.2.5、1.3.1、1.3.2 的强要塞在独立种子基准通过，任意 IntCache 历史状态仍标为 `Experimental`。
 
 ## 1.13.2–1.21.11
 
@@ -52,13 +52,10 @@
 | 1.21.10 | 29 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
 | 1.21.11 | 29 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
 
-1.18–1.21.11 的 `Api.SampleBiome` 已通过每个精确 JAR 234,864 个有效样本、2,646 个边界拒绝的有序回放，27 版共 6,341,328 个有效样本且零差异。原版 `Climate.ParameterList` 会把上次命中的叶节点用于等距离搜索；`SampleBiome` 按单个 generator 的调用顺序复现该规则，`ResetBiomeSampling` 清除上次命中状态。`Api.Generate` 生成独立、确定性的瓦片。结构总体仍为 Experimental，能力目录逐结构记录各阶段状态。
+1.18–1.21.11 的 `Api.SampleBiome` 已通过每个精确 JAR 234,864 个有效样本、2,646 个边界拒绝的有序回放，27 版共 6,341,328 个有效样本且零差异。原版 `Climate.ParameterList` 会把上次命中的叶节点用于等距离搜索；该状态在连续使用的 biome source／sampler 实例内延续，`SampleBiome` 将它保存在独占 generator 上，`ResetBiomeSampling` 清除上次命中状态。`Api.Generate` 则生成由世界参数和范围决定的独立、确定性瓦片，缓存和瓦片拼接不依赖生成顺序；因此它不声称复现任意原版有序查询历史中的 tie 选择。结构查询不共享此有序采样状态，另按每种结构的 biome、生成点与地形阶段验证。现代 27 版的 RawPlacement 与 Stronghold、Mineshaft 位置查询已逐版对照；Village、Woodland Mansion、Ruined Portal 与 Trail Ruins 的候选和 generation-point 仍受原版高度投影/地形条件限制，结构总体继续为 Experimental。
 
 | 发行版本 | 稳定 Native ID | 群系／维度 | 结构候选 | 强要塞 | 完整方块生成 |
 | --- | --- | --- | --- | --- | --- |
-| 1.2.5 | 100 | Supported | Supported | Experimental | Unsupported |
-| 1.3.1 | 101 | Supported | Supported | Experimental | Unsupported |
-| 1.3.2 | 102 | Supported | Supported | Experimental | Unsupported |
 | 1.4.2 | 103 | Supported | Supported | Supported | Unsupported |
 | 1.4.4 | 104 | Supported | Supported | Supported | Unsupported |
 | 1.4.5 | 105 | Supported | Supported | Supported | Unsupported |
@@ -105,7 +102,7 @@
 
 ## 实际结构能力
 
-每版只列出原版存在的结构：全部版本有矿井、村庄、Nether Fortress 和强要塞；神殿从本轮的 1.3.1 起验证，女巫小屋从 1.4.2 起验证，Monument 从 1.8 起验证，Igloo／End City 从 1.9 起验证，Mansion 从 1.11 起验证。`StructureCapabilities` 按实际结构列出 RawPlacement、BiomePredicate、Candidates、GenerationPoint、Terrain 和 FullGeneration。Mineshaft 的公开查询是 placement-only，其 BiomePredicate 与 GenerationPoint 为 Unsupported。现代 Desert Pyramid 和 Jungle Temple 的候选与生成点已对照；地形阶段保留 Experimental。村庄、Mansion、Ruined Portal 与 Trail Ruins 的现代候选仍为 Experimental。
+每版只列出原版存在的结构：公开版本全部有矿井、村庄、Nether Fortress 和强要塞；内部保留的 1.2.5、1.3.1、1.3.2 也有独立结构回归。神殿从内部研究范围的 1.3.1 起验证，女巫小屋从 1.4.2 起验证，Monument 从 1.8 起验证，Igloo／End City 从 1.9 起验证，Mansion 从 1.11 起验证。`StructureCapabilities` 按实际结构列出 RawPlacement、BiomePredicate、Candidates、GenerationPoint、Terrain 和 FullGeneration。Mineshaft 的公开查询是 placement-only，其 BiomePredicate 与 GenerationPoint 为 Unsupported。1.13.2–1.17.1 的登记结构候选与位置谓词在精确 JAR 样本中匹配；其中精确 1.14 以及 1.14.1–1.14.4 的 Ocean Ruin、Shipwreck、Village 对照未复现旧报告的大批差异。旧 `3943/829` 统计来自研究工具对稳定 Native ID 的 profile 映射错误，已作废。现代 Desert Pyramid 和 Jungle Temple 的候选与生成点已对照；地形阶段保留 Experimental。现代 Village、Mansion、Ruined Portal 与 Trail Ruins 的候选／生成点阶段仍为 Experimental；原版 1.21.11 的通用谓词会在 generation stub 的实际 `(x,y,z)` 调用 `getNoiseBiome`，而 Mansion、Ruined Portal、Trail Ruins 还会读取 `WORLD_SURFACE_WG` 或其它高度结果。
 
 End City 的 1.9–1.10.2 位置谓词没有高度过滤；1.11–1.12.2 复现原版 ChunkPrimer 索引和旋转 seed 的行为。仅这一位置谓词所需的高度检查被验证；完整末地地形及末地城方块放置仍未声明支持。Mansion 的支持同样只到 canSpawn 群系及位置谓词。
 
@@ -113,7 +110,7 @@ End City 的 1.9–1.10.2 位置谓词没有高度过滤；1.11–1.12.2 复现�
 
 群系实现分为四组：1.2.5；1.3.1–1.6.4；1.7.2–1.8.9 与 1.11–1.12.2；1.9–1.10.2。1.9／1.10 的 birch mutation 中间层与前后版本不同，不能合并。结构另选 Profile：1.4.2 的 quart 判定与组件分类、1.8 的 Monument、1.11 开始的末地城高度规则均有独立边界。
 
-Profile 共享不合并发行身份。46 个发行版本分别保留稳定 Native ID、验证等级和独立世界缓存；旧有公开 ID 不变。`BiomeProfileKey`、`StructureProfileKey` 是算法标识，不用作发行版本名称或跨世界缓存键。
+Profile 共享不合并发行身份。46 个历史发行版本分别保留稳定 Native ID、验证等级和独立研究／回归身份；其中 43 个进入公开发行目录，100–102 仅供内部研究和回归使用。`BiomeProfileKey`、`StructureProfileKey` 是算法标识，不用作发行版本名称或跨世界缓存键。
 
 ## 使用能力目录
 

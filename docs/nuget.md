@@ -71,7 +71,7 @@ dotnet pack src/RZeroF1.Minecraft.SeedMap.Core/RZeroF1.Minecraft.SeedMap.Core.cs
 
 包输出到 `artifacts/packages/`。构建过程调用本地 Native 构建脚本，使用固定的 Cubiomes 源码；指定 `win-x86`、`win-arm64` 或其他运行时会失败。
 
-当前源码包含 89 个发行版本条目，43 个现代发行版和 46 个历史发行版的逐版状态见 [版本矩阵](versions.md)。原版 JAR、Mapping、Oracle 与实验数据不进入包；消费端运行无需 Java。
+当前公开源码包含 86 个发行版本条目：43 个现代发行版和 43 个公开历史发行版。1.2.5、1.3.1、1.3.2 的 Native ID 与回归实现保留在源码和本地研究环境中，不进入 `Api.Versions` 的公开目录。逐版状态见 [版本矩阵](versions.md)。原版 JAR、Mapping、Oracle 与实验数据不进入包；消费端运行无需 Java。
 
 版本能力由包内 `Api.VersionCapabilities` 返回。实验性 Profile 会随 Native 资产编译，消费端应按各功能的能力状态和已记录限制决定是否启用。
 
@@ -82,6 +82,8 @@ dotnet pack src/RZeroF1.Minecraft.SeedMap.Core/RZeroF1.Minecraft.SeedMap.Core.cs
 ```powershell
 ./scripts/Test-ArtifactIsolation.ps1 -CheckTracked -PackageDirectory artifacts/packages -OutputDirectory src/RZeroF1.Minecraft.SeedMap.Core/bin/Release/net10.0/win-x64
 ```
+
+目录输入会读取当前 SDK 项目中的 `PackageVersion`，只检查本次版本对应的 `.nupkg` 和 `.snupkg`；不会枚举历史包。也可以直接传入单个当前包，例如 `-PackagePath artifacts/packages/RZeroF1.Minecraft.SeedMap.0.2.2.nupkg`。需要检查其他版本时显式传入 `-PackageVersion`。
 
 独立消费验证应在单独的 .NET 10 Windows x64 项目中通过 `PackageReference` 还原实际 `.nupkg`，核对版本能力、Native 修订号和实际加载路径。重复打包同一版本进行本地开发验证时，应换用新的包缓存目录；准备发布的产物从最终提交重新构建。
 
