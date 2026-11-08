@@ -25,27 +25,42 @@ public static partial class Api
             "1.21.5" or "1.21.6" or "1.21.7" or "1.21.8" => "cubiomes-1.21.5-1.21.8-strongholds",
             _ => biomeProfile
         };
-        bool exactCandidateStage = minor <= 17;
+        bool establishedModernQuery = minor <= 17;
         var structures = new[] { -1, 0, 1 }
             .SelectMany(dimension => Structures(version.Id, dimension))
             .Where(structure => structure.Id != 100)
             .Select(structure =>
             {
-                // Raw registry placements alone do not verify QueryRegion's
-                // additional biome and terrain predicates.
-                return new StructureCapability(structure.Id, structure.Key,
-                    exactCandidateStage ? VersionSupportStatus.Supported : VersionSupportStatus.Experimental,
-                    exactCandidateStage ? VersionSupportStatus.Supported : VersionSupportStatus.Experimental,
-                    VersionSupportStatus.Unsupported);
+                bool exactCandidate = establishedModernQuery ||
+                    structure.Id is not (5 or 9 or 11 or 23);
+                bool exactBiomePredicate = structure.Id != 15 &&
+                    (establishedModernQuery || structure.Id is not (5 or 9 or 11 or 23));
+                bool exactGenerationPoint = structure.Id != 15 &&
+                    (establishedModernQuery || structure.Id is not (5 or 9 or 11 or 23));
+                var capability = new StructureCapability(structure.Id, structure.Key,
+                    exactCandidate ? VersionSupportStatus.Supported : VersionSupportStatus.Experimental,
+                    structure.Id is 1 or 2 or 9 ? VersionSupportStatus.Experimental :
+                        structure.Id == 20 ? VersionSupportStatus.Supported : VersionSupportStatus.Unsupported,
+                    VersionSupportStatus.Unsupported)
+                {
+                    RawPlacement = VersionSupportStatus.Supported,
+                    BiomePredicate = exactBiomePredicate ? VersionSupportStatus.Supported :
+                        structure.Id == 15 ? VersionSupportStatus.Unsupported : VersionSupportStatus.Experimental,
+                    GenerationPoint = exactGenerationPoint ? VersionSupportStatus.Supported :
+                        structure.Id == 15 ? VersionSupportStatus.Unsupported : VersionSupportStatus.Experimental
+                };
+                return capability;
             })
             .ToArray();
-        string notes = exactCandidateStage
+        bool structuresSupported = structures.All(s => s.Candidates == VersionSupportStatus.Supported);
+        bool biomesSupported = true;
+        string notes = establishedModernQuery
             ? "精确 JAR 的五尺度群系、三维度、128 强要塞、矿井 RNG 及已登记结构的位置谓词已独立对照；完整结构方块生成仍未声明。"
-            : "精确 JAR 的三维度、128 强要塞、矿井 RNG、结构 placement 和原版 generation-point 阶段已独立记录；群系存在 Java ParameterList 等距离选择差异，结构候选与地形能力保持实验性。";
+            : "27 个精确 JAR 的群系、三维度、128 强要塞、原始 placement 和逐结构阶段已独立对照；Desert Pyramid、Jungle Temple、Village、Mansion、Ruined Portal 和 Trail Ruins 的候选或高度阶段仍属实验性。";
         return new(release, biomeProfile, structureProfile, version.Id,
-            exactCandidateStage ? VersionSupportStatus.Supported : VersionSupportStatus.Experimental,
-            exactCandidateStage ? VersionSupportStatus.Supported : VersionSupportStatus.Experimental,
-            exactCandidateStage ? VersionSupportStatus.Supported : VersionSupportStatus.Experimental,
+            structuresSupported ? VersionSupportStatus.Supported : VersionSupportStatus.Experimental,
+            biomesSupported ? VersionSupportStatus.Supported : VersionSupportStatus.Experimental,
+            structuresSupported ? VersionSupportStatus.Supported : VersionSupportStatus.Experimental,
             VersionSupportStatus.Supported,
             VersionVerificationStatus.GameJarAlgorithms, notes)
         {

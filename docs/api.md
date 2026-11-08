@@ -30,11 +30,13 @@ var cancellationToken = CancellationToken.None;
 | `SeedMap.Api.ParseSeed(text)` | 去除首尾空白后解析十进制 `long`，其他非空文本按 Java `String.hashCode()` 计算。 |
 | `SeedMap.Api.Create(world)` | 创建由 `SafeHandle` 管理的 Native generator，使用后释放。 |
 | `SeedMap.Api.Generate(...)` | 同步生成指定矩形范围的群系 ID。 |
+| `SeedMap.Api.SampleBiome(...)` | 按 generator 的顺序执行单点原版群系采样，复现现代 Climate 等距离选择中的上次命中状态。 |
+| `SeedMap.Api.ResetBiomeSampling(...)` | 清除该 generator 的有序采样状态，使下一次采样从原版搜索根节点开始。 |
 | `SeedMap.Api.QueryRegion(...)` | 查询指定结构区域，未找到时返回 `null`。 |
 | `SeedMap.Api.Strongholds(...)` | 查询要塞位置。 |
 | `SeedMap.Api.IsSlimeChunk(seed, chunkX, chunkZ)` | 按区块坐标查询史莱姆区块。 |
 
-`VersionInfo` 表示 Native 能力表中的发行版本和整数 ID；`VersionCapability` 额外表示 `BiomeProfileKey`、`StructureProfileKey`、总体状态、群系状态、结构状态、维度状态和验证状态。发行版本可以共享群系 profile，同时保留独立结构 profile。`Supported` 表示已纳入正式能力，`Experimental` 表示已执行精确 JAR 对照但仍有版本差异或阶段限制，`NativeSmokeOnly` 表示只完成 Native 调用和边界冒烟。结构 profile 的位置预测、群系适用性、地形判定和完整方块生成分开报告。`Strongholds` 单独报告强要塞支持等级；`StructureCapabilities` 按实际存在的结构列出 `Candidates`、`Terrain` 和 `FullGeneration`。`GameJarAlgorithms` 表示该精确 JAR 已完成算法对照。1.13.2–1.17.1 的已登记候选阶段达到 Supported；1.18–1.21.11 的群系和结构阶段保留 Experimental，`FullGeneration` 均为 `Unsupported`。完整逐版清单见 [版本矩阵](versions.md)。
+`VersionInfo` 表示 Native 能力表中的发行版本和整数 ID；`VersionCapability` 额外表示 `BiomeProfileKey`、`StructureProfileKey`、总体状态、群系状态、结构状态、维度状态和验证状态。发行版本可以共享群系 profile，同时保留独立结构 profile。`StructureCapability` 按实际结构分别报告 `RawPlacement`、`BiomePredicate`、`Candidates`、`GenerationPoint`、`Terrain` 和 `FullGeneration`。Mineshaft 的公开查询只返回 RNG placement，其 BiomePredicate 与 GenerationPoint 因不适用而标为 Unsupported；`FullGeneration` 对所有结构均为 Unsupported。1.18–1.21.11 的 Biome 已为 Supported，结构总体仍按逐结构阶段限制保留 Experimental。完整逐版清单见 [版本矩阵](versions.md)。
 
 ## 同步群系采样
 
@@ -45,6 +47,8 @@ int[] samples = SeedMap.Api.Generate(
 ```
 
 `width`、`height` 是样本数量，`step` 是相邻样本间隔的方块数，可取 `1`、`4`、`16`、`64`、`256`。返回数组按行排列，索引为 `row * width + column`。同一个 generator 应由单个计算任务独占。旧版主世界 scale 1 为方块 Voronoi，4 为 RiverMix，16／64／256 分别为中间 Layer 输出，不能视为对 scale 1 的等距抽样；旧版群系忽略 Y。1.12.2 及以前的公开末地群系始终为 ID 9，内部岛屿分类不向群系目录暴露。
+
+`SampleBiome` 与 `Generate` 使用相同的坐标、维度、步长和边界约定；它为单个 generator 保留 Climate 搜索叶节点，因此调用顺序与原版连续查询一致。每个 generator 必须只由一个任务访问。`Generate` 的瓦片不读取或改变有序采样状态，适用于并行和缓存的随机区域查询。
 
 ## 异步瓦片、结构与搜索
 

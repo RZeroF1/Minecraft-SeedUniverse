@@ -75,6 +75,23 @@ static int profile_version(int id) {
     return id >= 100 && id < 146 ? legacy_profiles[id-100] : id;
 }
 enum { RELEASE_1_4_2 = 103 };
+static uint32_t profile_flags(int id) {
+    if (id == RELEASE_1_4_2) return LEGACY_TEMPLE_142;
+    if (id == 146) return STRONGHOLD_NO_CHERRY;
+    if (id == 147) return OUTPOST_NO_SNOW;
+    if (id == 148) return UNCLAMPED_DEPTH | EARLY_118_STRUCTURES;
+    return 0;
+}
+static int structure_config(int type,int mc,uint32_t flags,StructureConfig *config) {
+    if(!getStructureConfig(type,mc,config)) return 0;
+    if(type==Ruined_Portal_N && (flags & EARLY_118_STRUCTURES)) {
+        // Cubiomes' MC_1_18 aliases 1.18.2. The exact release profile retains
+        // the earlier Nether-only 25/10 random-spread settings.
+        config->regionSize=25;
+        config->chunkRange=15;
+    }
+    return 1;
+}
 static int valid_version(int mc) {
     for (int i=0;i<(int)(sizeof(versions)/sizeof(*versions));i++)
         if (versions[i].id==mc) return 1;
@@ -94,7 +111,7 @@ static int64_t floor_div(int64_t a, int b) {
     int64_t q=a/b, r=a%b; return q-(r<0);
 }
 int cm_abi_version(void) { return 1; }
-const char *cm_source_revision(void) { return "ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2+legacy46.1+modern43.1"; }
+const char *cm_source_revision(void) { return "ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2+legacy46.1+modern43.2"; }
 int cm_versions(cm_version *out, int capacity) {
     int n=(int)(sizeof(versions)/sizeof(*versions));
     if (!out) return n;
@@ -103,6 +120,7 @@ int cm_versions(cm_version *out, int capacity) {
 }
 int cm_structures(int mc, int dim, cm_structure *out, int capacity) {
     if (!valid_version(mc) || dim < -1 || dim > 1) return CM_UNSUPPORTED;
+    uint32_t flags=profile_flags(mc);
     mc=profile_version(mc);
     int n=0;
     for(int type=0;type<FEATURE_NUM;type++) {
@@ -111,7 +129,7 @@ int cm_structures(int mc, int dim, cm_structure *out, int capacity) {
         if (type==Mineshaft) {
             if(dim!=DIM_OVERWORLD) continue;
             c.dim=DIM_OVERWORLD; c.regionSize=1;
-        } else if(!getStructureConfig(type,mc,&c) || c.dim!=dim) continue;
+        } else if(!structure_config(type,mc,flags,&c) || c.dim!=dim) continue;
         if (out) {
             if(n>=capacity) return CM_CAPACITY;
             out[n]=(cm_structure){type,dim,16*c.regionSize,1,struct2str(type)};
@@ -147,20 +165,22 @@ int cm_create(int mc,uint64_t seed,int dim,void **out) {
     if(!valid_version(mc) || dim < -1 || dim > 1) return CM_UNSUPPORTED;
     Generator *g=(Generator*)calloc(1,sizeof(Generator));
     if(!g) return CM_MEMORY;
-    uint32_t flags = mc==RELEASE_1_4_2 ? LEGACY_TEMPLE_142 : 0;
-    if (mc == 146) flags |= STRONGHOLD_NO_CHERRY;
-    if (mc == 147) flags |= OUTPOST_NO_SNOW;
-    if (mc == 148) flags |= UNCLAMPED_DEPTH;
+    uint32_t flags = profile_flags(mc);
     setupGenerator(g,profile_version(mc),flags); applySeed(g,dim,seed); *out=g; return CM_OK;
 }
 void cm_destroy(void *handle) { free(handle); }
+static int check_biome_range(int64_t x,int64_t z,int w,int h,int step,int y) {
+    if(step!=1 && step!=4 && step!=16 && step!=64 && step!=256) return CM_UNSUPPORTED;
+    if(x%step || z%step || x < -30000000 || z < -30000000 || x>=30000000 || z>=30000000 ||
+       x+(int64_t)(w-1)*step>=30000000 || z+(int64_t)(h-1)*step>=30000000 || y < -64 || y>320)
+        return CM_RANGE;
+    return CM_OK;
+}
 int cm_biomes(void *handle,int64_t x,int64_t z,int w,int h,int step,int y,int32_t *out,int capacity) {
     Generator *g=(Generator*)handle;
     if(!g || !out || w<=0 || h<=0 || w>512 || h>512 || capacity<w*h) return CM_INVALID;
-    if(step!=1 && step!=4 && step!=16 && step!=64 && step!=256) return CM_UNSUPPORTED;
-    if(x%step || z%step || x < -30000000 || z < -30000000 ||
-       x+(int64_t)(w-1)*step>=30000000 || z+(int64_t)(h-1)*step>=30000000 || y < -64 || y>320)
-        return CM_RANGE;
+    int check=check_biome_range(x,z,w,h,step,y);
+    if(check!=CM_OK) return check;
     Range r={step,(int)(x/step),(int)(z/step),w,h,
              step==1?y:(int)floor_div(y,4),1};
     int *cache=allocCache(g,r);
@@ -174,6 +194,32 @@ int cm_biomes(void *handle,int64_t x,int64_t z,int w,int h,int step,int y,int32_
     }
     free(cache);
     return rc?CM_GENERATION:CM_OK;
+}
+int cm_biome_sample(void *handle,int64_t x,int64_t z,int step,int y,
+                    uint64_t *search_state,int32_t *out) {
+    Generator *g=(Generator*)handle;
+    if(!g || !search_state || !out) return CM_INVALID;
+    int check=check_biome_range(x,z,1,1,step,y);
+    if(check!=CM_OK) return check;
+    if(g->dim==DIM_END || g->mc<MC_1_18)
+        return cm_biomes(handle,x,z,1,1,step,y,out,1);
+    int qx,qy,qz;
+    if(step==1)
+        voronoiAccess3D(g->sha,(int)x,y,(int)z,&qx,&qy,&qz);
+    else {
+        int offset=g->dim==DIM_OVERWORLD && step>4?step/2:0;
+        qx=(int)floor_div(x+offset,4);
+        qy=(int)floor_div(y,4);
+        qz=(int)floor_div(z+offset,4);
+    }
+    // Vanilla's RTree retains the previous nearest leaf on an equal-distance
+    // search. The explicit state makes this ordered operation independent of
+    // deterministic, order-independent map tiles.
+    if(g->dim==DIM_NETHER)
+        *out=getNetherBiomeNoise(&g->nn,qx,qz,search_state);
+    else
+        *out=sampleBiomeNoise(&g->bn,NULL,qx,qy,qz,search_state,0);
+    return CM_OK;
 }
 int cm_structure_region(void *handle,int type,int rx,int rz,cm_hit *out) {
     Generator *g=(Generator*)handle;
@@ -190,11 +236,15 @@ int cm_structure_region(void *handle,int type,int rx,int rz,cm_hit *out) {
         /* getMineshafts outputs block coordinates. */
     } else {
         StructureConfig c;
-        if(!getStructureConfig(type,g->mc,&c) || c.dim!=g->dim) return CM_UNSUPPORTED;
+        if(!structure_config(type,g->mc,g->flags,&c) || c.dim!=g->dim) return CM_UNSUPPORTED;
         int region=16*c.regionSize;
         if((int64_t)rx*region < -30000000-region || (int64_t)rx*region>=30000000 ||
            (int64_t)rz*region < -30000000-region || (int64_t)rz*region>=30000000) return CM_RANGE;
-        if(!getStructurePos(type,g->mc,g->seed,rx,rz,&pos)) return 0;
+        // Raw placement for the early exact Nether profile still uses
+        // generator version MC_1_18 (the upstream enum's 1.18.2 alias).
+        if(type==Ruined_Portal_N && (g->flags & EARLY_118_STRUCTURES))
+            pos=getFeaturePos(c,g->seed,rx,rz);
+        else if(!getStructurePos(type,g->mc,g->seed,rx,rz,&pos)) return 0;
         if(!isViableStructurePos(type,g,pos.x,pos.z,0)) return 0;
         if(!isViableStructureTerrain(type,g,pos.x,pos.z)) return 0;
         if(g->mc>=MC_1_18 && (type==Desert_Pyramid || type==Jungle_Temple || type==Mansion)) flags|=2;

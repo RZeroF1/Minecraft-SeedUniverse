@@ -305,26 +305,36 @@ int mapNether2D(const NetherNoise *nn, int *out, int x, int z, int w, int h)
     return mapNether3D(nn, out, r, 1.0);
 }
 
-static int getNetherBiomeQuantized(const NetherNoise *nn, int x, int z)
+int getNetherBiomeNoise(const NetherNoise *nn, int x, int z, uint64_t *dat)
 {
+    // RTree.build sorts these five leaves by the sum of absolute interval
+    // centers, including offset. This is the cold-search tie order.
     static const int64_t points[5][4] = {
-        {0, 0, 0, nether_wastes}, {0, -5000, 0, soul_sand_valley},
-        {4000, 0, 0, crimson_forest}, {0, 5000, 3750, warped_forest},
-        {-5000, 0, 1750, basalt_deltas}
+        {0, 0, 0, nether_wastes}, {4000, 0, 0, crimson_forest},
+        {0, -5000, 0, soul_sand_valley}, {-5000, 0, 1750, basalt_deltas},
+        {0, 5000, 3750, warped_forest}
     };
     float temperature = (float)sampleDoublePerlin(&nn->temperature, x, 0, z);
     float humidity = (float)sampleDoublePerlin(&nn->humidity, x, 0, z);
     int64_t t = (int64_t)(temperature * 10000.0f);
     int64_t h = (int64_t)(humidity * 10000.0f);
     int64_t best = INT64_MAX;
-    int biome = nether_wastes;
+    int leaf = 0;
+    if (dat && *dat >= 1 && *dat <= 5)
+    {
+        leaf = (int)*dat - 1;
+        int64_t dt = t-points[leaf][0], dh = h-points[leaf][1], offset = points[leaf][2];
+        best = dt*dt + dh*dh + offset*offset;
+    }
     for (int i = 0; i < 5; i++)
     {
         int64_t dt = t-points[i][0], dh = h-points[i][1], offset = points[i][2];
         int64_t distance = dt*dt + dh*dh + offset*offset;
-        if (distance < best) { best = distance; biome = (int)points[i][3]; }
+        if (distance < best) { best = distance; leaf = i; }
     }
-    return biome;
+    if (dat)
+        *dat = (uint64_t)leaf + 1;
+    return (int)points[leaf][3];
 }
 
 int genNetherScaled(const NetherNoise *nn, int *out, Range r, int mc, uint64_t sha)
@@ -351,7 +361,7 @@ int genNetherScaled(const NetherNoise *nn, int *out, Range r, int mc, uint64_t s
                     if (r.scale == 1)
                         voronoiAccess3D(sha, r.x+i, r.y+k, r.z+j, &x4, NULL, &z4);
                     else { x4 = (r.x+i)*(r.scale/4); z4 = (r.z+j)*(r.scale/4); }
-                    out[(k*r.sz+j)*r.sx+i] = getNetherBiomeQuantized(nn, x4, z4);
+                    out[(k*r.sz+j)*r.sx+i] = getNetherBiomeNoise(nn, x4, z4, NULL);
                 }
         return 0;
     }
@@ -1562,17 +1572,20 @@ int climateToBiome(int mc, const uint64_t np[6], uint64_t *dat)
     else
         bt = &btree18;
 
-    if (dat)
+    // A zero-initialized search has no previous leaf. In particular, node 0
+    // is the root, whose lower bound must not be used as a leaf distance.
+    if (dat && *dat < bt->len && (bt->nodes[*dat] >> 56) == 0xff)
     {
         int alt = (int) *dat;
         uint64_t ds = get_np_dist(np, bt, alt);
         idx = get_resulting_node(np, bt, 0, alt, ds, 0);
-        *dat = (uint64_t) idx;
     }
     else
     {
         idx = get_resulting_node(np, bt, 0, 0, -1, 0);
     }
+    if (dat)
+        *dat = (uint64_t) idx;
 
     return (bt->nodes[idx] >> 48) & 0xFF;
 }

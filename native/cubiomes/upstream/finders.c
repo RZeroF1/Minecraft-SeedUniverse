@@ -1462,6 +1462,13 @@ int isViableStructurePos(int structureType, Generator *g, int x, int z, uint32_t
             return 1;
         if (structureType == Fortress)
         {   // in 1.18+ fortresses generate everywhere, where bastions don't
+            if (g->flags & EARLY_118_STRUCTURES)
+            {
+                // 1.18/1.18.1 choose one feature before its biome predicate;
+                // a rejected bastion is not retried as a fortress.
+                uint64_t rng = chunkGenerateRnd(g->seed, chunkX, chunkZ);
+                return nextInt(&rng, 5) < 2;
+            }
             StructureConfig sc;
             if (!getStructureConfig(Fortress, g->mc, &sc))
                 return 0;
@@ -1561,7 +1568,18 @@ int isViableStructurePos(int structureType, Generator *g, int x, int z, uint32_t
     {
     case Trail_Ruins:
         if (g->mc <= MC_1_19) goto L_not_viable;
-        goto L_feature;
+        {
+            StructureVariant sv;
+            getVariant(&sv, Trail_Ruins, g->mc, g->seed, x, z, -1);
+            sampleX = (chunkX*32 + 2*sv.x + sv.sx - 1) / 2 >> 2;
+            sampleZ = (chunkZ*32 + 2*sv.z + sv.sz - 1) / 2 >> 2;
+            // The biome predicate belongs to the rotated start template's
+            // center. Its projected surface height remains a terrain stage.
+            id = getBiomeAt(g, 4, sampleX, 319>>2, sampleZ);
+        }
+        if (id < 0 || !isViableFeatureBiome(g->mc, structureType, id))
+            goto L_not_viable;
+        goto L_viable;
     case Ocean_Ruin:
     case Shipwreck:
     case Treasure:
@@ -2063,6 +2081,15 @@ int getVariant(StructureVariant *r, int structType, int mc, uint64_t seed,
 
     switch (structType)
     {
+    case Trail_Ruins:
+        if (mc < MC_1_20) return 0;
+        r->rotation = nextInt(&rng, 4);
+        r->start = 1 + nextInt(&rng, 5); // tower_1..5, equal weights
+        sx = sz = r->start <= 2 ? 5 : 7;
+        sy = 13;
+        r->y = -15; // offset from WORLD_SURFACE_WG, before projection
+        goto L_rotate_village_bastion;
+
     case Village:
         if (mc <= MC_1_9)
             return 0;
@@ -2185,11 +2212,14 @@ int getVariant(StructureVariant *r, int structType, int mc, uint64_t seed,
         sx = 18; sy = 31; sz = 41;
         switch (r->rotation)
         { // 0:0, 1:cw90, 2:cw180, 3:cw270=ccw90
-        case 0: x = -(x>0);    z = -(z>0);    r->sx = sx; r->sz = sz; break;
-        case 1: x = +(x<0)-sz; z = -(z>0);    r->sx = sz; r->sz = sx; break;
-        case 2: x = +(x<0)-sx; z = +(z<0)-sz; r->sx = sx; r->sz = sz; break;
-        case 3: x = -(x>0);    z = +(z<0)-sx; r->sx = sz; r->sz = sx; break;
+        case 0: x = 0;    z = 0;    r->sx = sx; r->sz = sz; break;
+        case 1: x = 1-sz; z = 0;    r->sx = sz; r->sz = sx; break;
+        case 2: x = 1-sx; z = 1-sz; r->sx = sx; r->sz = sz; break;
+        case 3: x = 0;    z = 1-sx; r->sx = sz; r->sz = sx; break;
         }
+        // Rotated template bounds are inclusive and independent of the
+        // world's coordinate sign. Java truncation applies to their center,
+        // after translating the named jigsaw anchor.
         // note the city_anchor (13, *, 20) is part of the city_center
         sx = 13; sz = 20; // city_anchor
         switch (r->rotation)

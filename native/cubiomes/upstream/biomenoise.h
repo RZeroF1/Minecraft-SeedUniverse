@@ -198,6 +198,8 @@ double sampleSurfaceNoiseBetween(const SurfaceNoise *sn, int x, int y, int z,
  */
 void setNetherSeed(NetherNoise *nn, uint64_t seed);
 int getNetherBiome(const NetherNoise *nn, int x, int y, int z, float *ndel);
+// 1.18+ quantized climate search; optional state retains a previous leaf on ties.
+int getNetherBiomeNoise(const NetherNoise *nn, int x, int z, uint64_t *dat);
 int mapNether2D(const NetherNoise *nn, int *out, int x, int z, int w, int h);
 int mapNether3D(const NetherNoise *nn, int *out, Range r, float confidence);
 /**

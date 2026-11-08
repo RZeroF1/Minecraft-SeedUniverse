@@ -19,7 +19,8 @@
  * Tiles use aligned block origins, step={1,4,16,64,256}, row-major int32 IDs.
  * Y is always blocks (the wrapper performs Cubiomes' vertical scale conversion).
  * World bounds are [-30,000,000,30,000,000); calls outside fail with CM_RANGE.
- * Calls are synchronous and bounded; cancellation belongs between calls/tiles.
+ * Ordered cm_biome_sample additionally takes caller-owned search state. Calls
+ * are synchronous and bounded; cancellation belongs between calls/tiles.
  */
 enum { CM_OK=0, CM_INVALID=-1, CM_UNSUPPORTED=-2, CM_RANGE=-3,
        CM_MEMORY=-4, CM_GENERATION=-5, CM_CAPACITY=-6 };
@@ -37,6 +38,11 @@ CM_API int cm_create(int version, uint64_t seed, int dimension, void **out);
 CM_API void cm_destroy(void *handle);
 CM_API int cm_biomes(void *handle, int64_t x, int64_t z, int width, int height,
                      int step, int y, int32_t *out, int capacity);
+/* Ordered vanilla biome-source sampling. Initialize search_state to zero and
+ * retain it only for this handle's sequence. A failed call leaves it unchanged.
+ * cm_biomes remains independent of search_state and of previous queries. */
+CM_API int cm_biome_sample(void *handle, int64_t x, int64_t z, int step, int y,
+                          uint64_t *search_state, int32_t *out);
 /* One placement region per call; mine shafts use 16x16 block regions.
  * Strongholds use cm_strongholds. Result flags: 1=biome checked,
  * 2=approximate terrain checked. Neither implies block-world certainty. */

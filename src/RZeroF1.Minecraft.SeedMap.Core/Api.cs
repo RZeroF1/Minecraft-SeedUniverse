@@ -11,7 +11,12 @@ public sealed record VersionInfo(int Id, string Key, int Dimensions);
 public enum VersionSupportStatus { Unsupported, NativeSmokeOnly, Experimental, Supported }
 public enum VersionVerificationStatus { None, NativeSmoke, GameJarBiomesAndDimensions, GameJarAlgorithms }
 public sealed record StructureCapability(int Id, string Key, VersionSupportStatus Candidates,
-    VersionSupportStatus Terrain, VersionSupportStatus FullGeneration);
+    VersionSupportStatus Terrain, VersionSupportStatus FullGeneration)
+{
+    public VersionSupportStatus RawPlacement { get; init; } = VersionSupportStatus.Unsupported;
+    public VersionSupportStatus BiomePredicate { get; init; } = VersionSupportStatus.Unsupported;
+    public VersionSupportStatus GenerationPoint { get; init; } = VersionSupportStatus.Unsupported;
+}
 public sealed record VersionCapability(
     string ReleaseKey,
     string BiomeProfileKey,
@@ -42,7 +47,7 @@ public static partial class Api
     private const string Library = "rzero_seedmap";
     public const int WorldLimit = 30_000_000;
     public const int AbiVersion = 1;
-    public const string Revision = "ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2+legacy46.1+modern43.1";
+    public const string Revision = "ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2+legacy46.1+modern43.2";
     private static readonly Lazy<VersionInfo[]> NativeCapabilities = new(InitializeNative);
     private static readonly Lazy<VersionInfo[]> Capabilities = new(InitializeReleaseCatalog);
     private static readonly Lazy<VersionCapability[]> VersionCapabilityTable = new(InitializeVersionCapabilities);
@@ -84,6 +89,7 @@ public static partial class Api
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl), DefaultDllImportSearchPaths(DllImportSearchPath.AssemblyDirectory)] private static extern int cm_create(int version, ulong seed, int dimension, out IntPtr handle);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl), DefaultDllImportSearchPaths(DllImportSearchPath.AssemblyDirectory)] private static extern void cm_destroy(IntPtr handle);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl), DefaultDllImportSearchPaths(DllImportSearchPath.AssemblyDirectory)] private static extern int cm_biomes(Generator handle, long x, long z, int w, int h, int step, int y, [Out] int[] output, int capacity);
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl), DefaultDllImportSearchPaths(DllImportSearchPath.AssemblyDirectory)] private static extern int cm_biome_sample(Generator handle, long x, long z, int step, int y, ref ulong searchState, out int biome);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl), DefaultDllImportSearchPaths(DllImportSearchPath.AssemblyDirectory)] private static extern int cm_structure_region(Generator handle, int type, int rx, int rz, out NativeHit hit);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl), DefaultDllImportSearchPaths(DllImportSearchPath.AssemblyDirectory)] private static extern int cm_strongholds(Generator handle, [Out] NativeHit[] output, int capacity);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl), DefaultDllImportSearchPaths(DllImportSearchPath.AssemblyDirectory)] private static extern int cm_slime(ulong seed, int chunkX, int chunkZ);
@@ -158,6 +164,23 @@ public static partial class Api
         var ids = new int[checked(width * height)];
         Check(cm_biomes(generator, x, z, width, height, step, y, ids, ids.Length));
         return ids;
+    }
+
+    /// <summary>按原版 BiomeSource 的调用顺序采样；现代主世界及下界的等距离 climate 选择会保留本 Generator 上次命中的叶节点。</summary>
+    /// <remarks>Generator 由调用者独占。Generate 的瓦片计算独立于此序列，保持分块和调用顺序无关。</remarks>
+    public static int SampleBiome(Generator generator, long x, long z, int step, int y)
+    {
+        ArgumentNullException.ThrowIfNull(generator);
+        Check(cm_biome_sample(generator, x, z, step, y, ref generator.BiomeSearchState, out int biome));
+        return biome;
+    }
+
+    /// <summary>清除有序群系采样的上次命中状态，使下一次 SampleBiome 从原版搜索树根开始查找。</summary>
+    public static void ResetBiomeSampling(Generator generator)
+    {
+        ArgumentNullException.ThrowIfNull(generator);
+        ObjectDisposedException.ThrowIf(generator.IsClosed, generator);
+        generator.BiomeSearchState = 0;
     }
 
     public static BiomeInfo[] Biomes(int version, int dimension)
@@ -357,6 +380,8 @@ public static partial class Api
 
 public sealed class Generator : SafeHandleZeroOrMinusOneIsInvalid
 {
+    internal ulong BiomeSearchState;
+
     internal Generator(IntPtr value) : base(true) => SetHandle(value);
 
     protected override bool ReleaseHandle()

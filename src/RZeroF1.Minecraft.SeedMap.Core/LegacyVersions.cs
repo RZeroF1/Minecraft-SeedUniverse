@@ -47,7 +47,12 @@ public static partial class Api
             .Select(structure => new StructureCapability(structure.Id, structure.Key,
                 VersionSupportStatus.Supported,
                 structure.Id == 20 && minor >= 11 ? VersionSupportStatus.Supported : VersionSupportStatus.Unsupported,
-                VersionSupportStatus.Unsupported))
+                VersionSupportStatus.Unsupported)
+            {
+                RawPlacement = VersionSupportStatus.Supported,
+                BiomePredicate = structure.Id == 15 ? VersionSupportStatus.Unsupported : VersionSupportStatus.Supported,
+                GenerationPoint = structure.Id == 15 ? VersionSupportStatus.Unsupported : VersionSupportStatus.Supported
+            })
             .ToArray();
         return new(release, biomeProfile, structureProfile, version.Id,
             historicalCache ? VersionSupportStatus.Experimental : VersionSupportStatus.Supported,

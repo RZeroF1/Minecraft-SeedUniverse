@@ -2,7 +2,7 @@
 
 当前源码目录包含 89 个发行版本条目。1.13.2–1.21.11 的 43 个发行版和 1.2.5–1.12.2 的 46 个发行版都使用各自官方 SHA-1 校验客户端完成了独立原版 Java Oracle 对照；消费端运行 SDK 无需 Java 或游戏 JAR。
 
-`Supported` 针对对应能力与 DEFAULT 世界参数；结构查询返回已验证的原版候选和位置谓词阶段。`Experimental` 表示已执行精确 JAR 对照，但仍有版本差异、阶段限制或未完成的生产等价实现。`Api.Biomes` 是 DEFAULT 可生成群系目录，省略原版注册表中未用于该世界类型的条目。原版完整地形、结构方块落地、升级世界和自定义生成参数不由候选等级覆盖。1.2.5、1.3.1、1.3.2 的强要塞在独立种子基准通过，任意 IntCache 历史状态仍标为 `Experimental`。1.18 及以后群系保留 Java `ParameterList` 等距离选择差异的实验性状态。
+`Supported` 针对对应能力与 DEFAULT 世界参数；结构能力按 RawPlacement、BiomePredicate、Candidates、GenerationPoint、Terrain 和 FullGeneration 阶段分别记录。`Experimental` 表示精确 JAR 对照已发现阶段限制，或该阶段尚无生产等价实现。`Api.Biomes` 是 DEFAULT 可生成群系目录，省略原版注册表中未用于该世界类型的条目。原版完整地形、结构方块落地、升级世界和自定义生成参数不由候选等级覆盖。1.2.5、1.3.1、1.3.2 的强要塞在独立种子基准通过，任意 IntCache 历史状态仍标为 `Experimental`。
 
 ## 1.13.2–1.21.11
 
@@ -24,35 +24,35 @@
 | 1.16.4 | 20 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
 | 1.16.5 | 20 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
 | 1.17.1 | 21 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
-| 1.18 | 148 | Experimental | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.18.1 | 148 | Experimental | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.18.2 | 22 | Experimental | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.19 | 23 | Experimental | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.19.1 | 23 | Experimental | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.19.2 | 23 | Experimental | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.19.3 | 24 | Experimental | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.19.4 | 24 | Experimental | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.20 | 25 | Experimental | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.20.1 | 25 | Experimental | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.20.2 | 25 | Experimental | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.20.3 | 25 | Experimental | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.20.4 | 25 | Experimental | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.20.5 | 25 | Experimental | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.20.6 | 25 | Experimental | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.21 | 26 | Experimental | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.21.1 | 26 | Experimental | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.21.2 | 27 | Experimental | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.21.3 | 27 | Experimental | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.21.4 | 28 | Experimental | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.21.5 | 146 | Experimental | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.21.6 | 146 | Experimental | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.21.7 | 146 | Experimental | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.21.8 | 146 | Experimental | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.21.9 | 29 | Experimental | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.21.10 | 29 | Experimental | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.21.11 | 29 | Experimental | Experimental | Supported | Supported | GameJarAlgorithms |
+| 1.18 | 148 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
+| 1.18.1 | 148 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
+| 1.18.2 | 22 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
+| 1.19 | 23 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
+| 1.19.1 | 23 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
+| 1.19.2 | 23 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
+| 1.19.3 | 24 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
+| 1.19.4 | 24 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
+| 1.20 | 25 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
+| 1.20.1 | 25 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
+| 1.20.2 | 25 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
+| 1.20.3 | 25 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
+| 1.20.4 | 25 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
+| 1.20.5 | 25 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
+| 1.20.6 | 25 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
+| 1.21 | 26 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
+| 1.21.1 | 26 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
+| 1.21.2 | 27 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
+| 1.21.3 | 27 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
+| 1.21.4 | 28 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
+| 1.21.5 | 146 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
+| 1.21.6 | 146 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
+| 1.21.7 | 146 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
+| 1.21.8 | 146 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
+| 1.21.9 | 29 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
+| 1.21.10 | 29 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
+| 1.21.11 | 29 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
 
-1.18 及以后仍保留 Experimental 的原因是原版 `Climate.ParameterList` 在等距离参数上的列表顺序与当前固定 Native 二叉树的选择顺序存在 225 个固定矩阵差异；原版气候值本身已逐点核对，结构 generation-point 阶段另有独立记录。结构候选、地形和完整方块生成分别记录，不因群系或 placement 相同而自动合并。
+1.18–1.21.11 的 `Api.SampleBiome` 已通过每个精确 JAR 234,864 个有效样本、2,646 个边界拒绝的有序回放，27 版共 6,341,328 个有效样本且零差异。原版 `Climate.ParameterList` 会把上次命中的叶节点用于等距离搜索；`SampleBiome` 按单个 generator 的调用顺序复现该规则，`ResetBiomeSampling` 清除上次命中状态。`Api.Generate` 生成独立、确定性的瓦片。结构总体仍为 Experimental，能力目录逐结构记录各阶段状态。
 
 | 发行版本 | 稳定 Native ID | 群系／维度 | 结构候选 | 强要塞 | 完整方块生成 |
 | --- | --- | --- | --- | --- | --- |
@@ -105,7 +105,7 @@
 
 ## 实际结构能力
 
-每版只列出原版存在的结构：全部版本有矿井、村庄、Nether Fortress 和强要塞；神殿从本轮的 1.3.1 起验证，女巫小屋从 1.4.2 起验证，Monument 从 1.8 起验证，Igloo／End City 从 1.9 起验证，Mansion 从 1.11 起验证。查询 `Api.GetVersionCapability(release).StructureCapabilities` 获取精确结构清单和各阶段等级。
+每版只列出原版存在的结构：全部版本有矿井、村庄、Nether Fortress 和强要塞；神殿从本轮的 1.3.1 起验证，女巫小屋从 1.4.2 起验证，Monument 从 1.8 起验证，Igloo／End City 从 1.9 起验证，Mansion 从 1.11 起验证。`StructureCapabilities` 按实际结构列出 RawPlacement、BiomePredicate、Candidates、GenerationPoint、Terrain 和 FullGeneration。Mineshaft 的公开查询是 placement-only，其 BiomePredicate 与 GenerationPoint 为 Unsupported。现代 Desert Pyramid 和 Jungle Temple 的候选与生成点已对照；地形阶段保留 Experimental。村庄、Mansion、Ruined Portal 与 Trail Ruins 的现代候选仍为 Experimental。
 
 End City 的 1.9–1.10.2 位置谓词没有高度过滤；1.11–1.12.2 复现原版 ChunkPrimer 索引和旋转 seed 的行为。仅这一位置谓词所需的高度检查被验证；完整末地地形及末地城方块放置仍未声明支持。Mansion 的支持同样只到 canSpawn 群系及位置谓词。
 

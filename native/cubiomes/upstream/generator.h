@@ -14,6 +14,7 @@ enum
     STRONGHOLD_NO_CHERRY    = 0x200, // exact 1.21.5-1.21.8 preference tag
     OUTPOST_NO_SNOW         = 0x400, // 1.14; snowy outposts added in 1.14.1
     UNCLAMPED_DEPTH        = 0x800, // exact 1.18/1.18.1
+    EARLY_118_STRUCTURES   = 0x1000, // 1.18/1.18.1 placements and Nether selection
 };
 
 STRUCT(Generator)

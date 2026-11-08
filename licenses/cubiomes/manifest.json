@@ -1,17 +1,17 @@
 {
   "component": "Cubiomes",
-  "revision": "ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2+legacy46.1+modern43.1",
+  "revision": "ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2+legacy46.1+modern43.2",
   "license": "MIT",
   "source": "https://github.com/Cubitect/cubiomes",
   "files": {
-    "native/cubiomes/upstream/biomenoise.c": "b3433f1b025694f2c85655f5a765e16a518a30ac9609f94ae22cc7ce02243c03",
-    "native/cubiomes/upstream/biomenoise.h": "d2c29fca94edca315f6af5f17f3d1c696b7e3b0b0e894915b8c6bd988acb1025",
+    "native/cubiomes/upstream/biomenoise.c": "ffbfdc46bf0464e0de0d620ce5eafcd2c429b107c6e085f3b5680401a9a7153f",
+    "native/cubiomes/upstream/biomenoise.h": "8908ebe95413a2aba2584931ababc4a4439df437562135972f8e7296e93c95e2",
     "native/cubiomes/upstream/biomes.c": "19cd5e45376505fb4ef1ccdc3b10f06c4c8d38de6886d7bd535715a9464e9e0c",
     "native/cubiomes/upstream/biomes.h": "9034c72cb79e39a6d60e1de255b0fadd451959504fc8dfe105d664e1597b22f6",
-    "native/cubiomes/upstream/finders.c": "9e797c89fc35a28180810f815fa413cd00c7658fe784fec5390975ae73cb9511",
+    "native/cubiomes/upstream/finders.c": "72ef2b0ab41545c3178bbdd82358ce78e1f589367f0d9635becf4931da9726a4",
     "native/cubiomes/upstream/finders.h": "89bde20ae193459c87567b6e9b3742de87620bfaed574e5f5c9e1b4919eed67c",
     "native/cubiomes/upstream/generator.c": "76ebdd1f51a654e0575c04d27b9b6c4d6d265985a2895c48fed1f1a53f07c05f",
-    "native/cubiomes/upstream/generator.h": "3fda3af84a55de2fc843148303c9a28d01da836b29434e44b7202cc969b379c0",
+    "native/cubiomes/upstream/generator.h": "2e3f91ba6f0685be83e144600dd7a563123be7acbbd7b7ea8e715be5cd45961e",
     "native/cubiomes/upstream/layers.c": "d145bce593b4a9aa96d99912720c33ae51303b23861e87091e5fd031a3661f78",
     "native/cubiomes/upstream/layers.h": "926334c371a9e8408f107b0d999b87023cca2f548c23c64254566d3a8dcb97e1",
     "native/cubiomes/upstream/LICENSE": "894d391566a3bb235b1df6c278960b2083769076b0199a0a367c771b05a74120",
@@ -26,8 +26,11 @@
     "native/cubiomes/upstream/tables/btree215.h": "e08130964e66142c10f8e5e27e7a18b363a98720d464a04ecab8f1768aa1de16",
     "native/cubiomes/upstream/tables/btree21wd.h": "ce8cc83f9be7e2bd6e61589bfb5c401451ac01c49032f51949ad7de0cfb303d9",
     "native/cubiomes/upstream/util.c": "40885a2407e3253595f5a84ba30d9223d284188c759278f014dd03f823638ae1",
-    "native/cubiomes/upstream/util.h": "086fb1d99ac9da860be98ad5239acb7bf4f326a0c30b554710909c36d4b3e154"
+    "native/cubiomes/upstream/util.h": "086fb1d99ac9da860be98ad5239acb7bf4f326a0c30b554710909c36d4b3e154",
+    "native/cubiomes/build.cmd": "db0f4f5efc5703766b107e6a3aa6ccef794aafb34702d44017f872cae2f1d0b1",
+    "native/cubiomes/seedmap.c": "d433bf141c3bce98bd637ff603924a7d5df9d20dfc2a9b78a9e5a857dfe1c89e",
+    "native/cubiomes/seedmap.h": "7bca49e2f1c511662aab1e1780101e7991c9e9ec6d23537f3bbfdc174772317f"
   },
   "base_revision": "ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2",
-  "local_changes": "Exact Java 1.2.5-1.12.2 release profiles, vanilla structure predicates, legacy End semantics, and modern 1.13.2-1.21.11 release adaptations"
+  "local_changes": "Exact Java 1.2.5-1.12.2 release profiles, vanilla structure predicates, legacy End semantics, and modern 1.13.2-1.21.11 release adaptations; Ordered climate ties and exact 1.18+ structure profile/candidate refinements."
 }
