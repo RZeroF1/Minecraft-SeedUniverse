@@ -151,7 +151,7 @@ jobs:
             if (-not $version -or $version.InnerText -ne $expectedVersion.InnerText) {
               throw '包版本与项目版本不一致。'
             }
-            $expectedUrl = 'https://github.com/RZeroF1/WinUI-Minecraft-SeedMap'
+            $expectedUrl = 'https://github.com/RZeroF1/Minecraft-SeedUniverse'
             if (-not $projectUrl -or $projectUrl.InnerText -ne $expectedUrl -or
                 -not $repository -or $repository.GetAttribute('url') -ne $expectedUrl) {
               throw 'NuGet 项目或源码仓库地址不正确。'

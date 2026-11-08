@@ -1,8 +1,8 @@
-# RZeroF1.Minecraft.SeedMap
+# Minecraft-SeedUniverse
 
-[简体中文](https://github.com/RZeroF1/WinUI-Minecraft-SeedMap/blob/main/README.md) | [English](https://github.com/RZeroF1/WinUI-Minecraft-SeedMap/blob/main/README.en.md)
+[简体中文](https://github.com/RZeroF1/Minecraft-SeedUniverse/blob/main/README.md) | [English](https://github.com/RZeroF1/Minecraft-SeedUniverse/blob/main/README.en.md)
 
-`RZeroF1.Minecraft.SeedMap` 是面向 Minecraft Java Edition 的 .NET 10 种子地图 SDK，基于固定修订版 Cubiomes，提供群系采样、异步地图瓦片、结构查询、精确基础地形高度、附近群系搜索、坐标与相机数学、颜色转换、几何辅助和离屏 BGRA 导出。
+Minecraft-SeedUniverse 是面向 Minecraft Java Edition 世界生成计算与种子地图的通用 .NET 10 SDK，以 `RZeroF1.Minecraft.SeedMap` NuGet 包提供，基于固定修订版 Cubiomes，提供群系采样、异步地图瓦片、结构查询、精确基础地形高度、附近群系搜索、坐标与相机数学、颜色转换、几何辅助和离屏 BGRA 导出。
 
 SDK 提供数据、计算和图像缓冲区。消费端可以使用 WinUI、WPF、Avalonia、WebView、控制台或服务端程序，自行实现交互和图像呈现。
 
@@ -10,9 +10,9 @@ SDK 提供数据、计算和图像缓冲区。消费端可以使用 WinUI、WPF�
 
 | 文档 | 内容 |
 |---|---|
-| [API 说明](https://github.com/RZeroF1/WinUI-Minecraft-SeedMap/blob/main/docs/api.md) | 世界模型、群系与结构查询、瓦片、相机、颜色和导出示例。 |
-| [架构说明](https://github.com/RZeroF1/WinUI-Minecraft-SeedMap/blob/main/docs/architecture.md) | 模块职责、Native 资源、异步任务和缓存生命周期。 |
-| [NuGet 与发布](https://github.com/RZeroF1/WinUI-Minecraft-SeedMap/blob/main/docs/nuget.md) | 安装、本地打包、独立包消费验证和发布流程。 |
+| [API 说明](https://github.com/RZeroF1/Minecraft-SeedUniverse/blob/main/docs/api.md) | 世界模型、群系与结构查询、瓦片、相机、颜色和导出示例。 |
+| [架构说明](https://github.com/RZeroF1/Minecraft-SeedUniverse/blob/main/docs/architecture.md) | 模块职责、Native 资源、异步任务和缓存生命周期。 |
+| [NuGet 与发布](https://github.com/RZeroF1/Minecraft-SeedUniverse/blob/main/docs/nuget.md) | 安装、本地打包、独立包消费验证和发布流程。 |
 
 ## 当前能力
 
@@ -58,7 +58,7 @@ rzero_seedmap.dll
 </ItemGroup>
 ```
 
-公开版本见 [NuGet](https://www.nuget.org/packages/RZeroF1.Minecraft.SeedMap)，源码和版本记录见 [GitHub](https://github.com/RZeroF1/WinUI-Minecraft-SeedMap/releases)。尚未发布的源码版本可按[本地打包流程](https://github.com/RZeroF1/WinUI-Minecraft-SeedMap/blob/main/docs/nuget.md#本地构建与打包)验证。
+公开版本见 [NuGet](https://www.nuget.org/packages/RZeroF1.Minecraft.SeedMap)，源码和版本记录见 [GitHub](https://github.com/RZeroF1/Minecraft-SeedUniverse/releases)。尚未发布的源码版本可按[本地打包流程](https://github.com/RZeroF1/Minecraft-SeedUniverse/blob/main/docs/nuget.md#本地构建与打包)验证。
 
 ## 快速开始
 
@@ -115,4 +115,4 @@ dotnet pack src/RZeroF1.Minecraft.SeedMap.Core/RZeroF1.Minecraft.SeedMap.Core.cs
 
 ## 许可证
 
-RZeroF1 原创代码采用 MPL 2.0，见 [LICENSE](https://github.com/RZeroF1/WinUI-Minecraft-SeedMap/blob/main/LICENSE)。Cubiomes 上游代码保留 MIT 许可证和 Cubitect 的版权声明，见[第三方声明](https://github.com/RZeroF1/WinUI-Minecraft-SeedMap/blob/main/THIRD-PARTY-NOTICES.md)和[来源说明](https://github.com/RZeroF1/WinUI-Minecraft-SeedMap/blob/main/licenses/cubiomes/SOURCE.md)。许可证和第三方来源文档使用英文。
+RZeroF1 原创代码采用 MPL 2.0，见 [LICENSE](https://github.com/RZeroF1/Minecraft-SeedUniverse/blob/main/LICENSE)。Cubiomes 上游代码保留 MIT 许可证和 Cubitect 的版权声明，见[第三方声明](https://github.com/RZeroF1/Minecraft-SeedUniverse/blob/main/THIRD-PARTY-NOTICES.md)和[来源说明](https://github.com/RZeroF1/Minecraft-SeedUniverse/blob/main/licenses/cubiomes/SOURCE.md)。许可证和第三方来源文档使用英文。

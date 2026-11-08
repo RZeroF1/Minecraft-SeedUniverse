@@ -12,9 +12,9 @@
 | 原生运行时 | `win-x64` |
 | 项目许可证 | MPL-2.0 |
 | Cubiomes 许可证 | MIT，保留 Cubitect 的版权声明 |
-| 源码仓库 | [RZeroF1/WinUI-Minecraft-SeedMap](https://github.com/RZeroF1/WinUI-Minecraft-SeedMap) |
+| 源码仓库 | [RZeroF1/Minecraft-SeedUniverse](https://github.com/RZeroF1/Minecraft-SeedUniverse) |
 
-NuGet 包的已发布版本以 [nuget.org](https://www.nuget.org/packages/RZeroF1.Minecraft.SeedMap) 为准，源码标签和更新说明见 [GitHub Releases](https://github.com/RZeroF1/WinUI-Minecraft-SeedMap/releases)。
+NuGet 包的已发布版本以 [nuget.org](https://www.nuget.org/packages/RZeroF1.Minecraft.SeedMap) 为准，源码标签和更新说明见 [GitHub Releases](https://github.com/RZeroF1/Minecraft-SeedUniverse/releases)。
 
 ## 安装
 

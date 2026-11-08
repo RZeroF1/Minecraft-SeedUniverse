@@ -1,8 +1,8 @@
-# RZeroF1.Minecraft.SeedMap
+# Minecraft-SeedUniverse
 
-[简体中文](https://github.com/RZeroF1/WinUI-Minecraft-SeedMap/blob/main/README.md) | [English](https://github.com/RZeroF1/WinUI-Minecraft-SeedMap/blob/main/README.en.md)
+[简体中文](https://github.com/RZeroF1/Minecraft-SeedUniverse/blob/main/README.md) | [English](https://github.com/RZeroF1/Minecraft-SeedUniverse/blob/main/README.en.md)
 
-`RZeroF1.Minecraft.SeedMap` is a .NET 10 SDK for Minecraft Java Edition seed maps. Built on a pinned Cubiomes revision, it provides biome sampling, asynchronous map tiles, structure queries, exact base terrain heights, nearby biome searches, camera and coordinate math, color conversion, geometry helpers, and offscreen BGRA export.
+Minecraft-SeedUniverse is a general-purpose .NET 10 SDK for Minecraft Java Edition world-generation computation and seed mapping, distributed as the `RZeroF1.Minecraft.SeedMap` NuGet package. Built on a pinned Cubiomes revision, it provides biome sampling, asynchronous map tiles, structure queries, exact base terrain heights, nearby biome searches, camera and coordinate math, color conversion, geometry helpers, and offscreen BGRA export.
 
 The SDK supplies data, computation, and pixel buffers. Host applications can use WinUI, WPF, Avalonia, WebView, a console, or a server process to implement their own interaction and rendering.
 
@@ -12,9 +12,9 @@ The detailed guides are maintained in Simplified Chinese.
 
 | Guide | Contents |
 |---|---|
-| [API guide](https://github.com/RZeroF1/WinUI-Minecraft-SeedMap/blob/main/docs/api.md) | World models, biome and structure queries, tiles, cameras, colors, and export examples. |
-| [Architecture](https://github.com/RZeroF1/WinUI-Minecraft-SeedMap/blob/main/docs/architecture.md) | Module responsibilities, native resources, asynchronous work, and cache lifetimes. |
-| [NuGet and publishing](https://github.com/RZeroF1/WinUI-Minecraft-SeedMap/blob/main/docs/nuget.md) | Installation, local packaging, independent package verification, and the publishing process. |
+| [API guide](https://github.com/RZeroF1/Minecraft-SeedUniverse/blob/main/docs/api.md) | World models, biome and structure queries, tiles, cameras, colors, and export examples. |
+| [Architecture](https://github.com/RZeroF1/Minecraft-SeedUniverse/blob/main/docs/architecture.md) | Module responsibilities, native resources, asynchronous work, and cache lifetimes. |
+| [NuGet and publishing](https://github.com/RZeroF1/Minecraft-SeedUniverse/blob/main/docs/nuget.md) | Installation, local packaging, independent package verification, and the publishing process. |
 
 ## Capabilities
 
@@ -59,7 +59,7 @@ Add the package to a .NET 10 project and explicitly target Windows x64:
 </ItemGroup>
 ```
 
-Published packages are available on [NuGet](https://www.nuget.org/packages/RZeroF1.Minecraft.SeedMap); source releases are on [GitHub](https://github.com/RZeroF1/WinUI-Minecraft-SeedMap/releases). To verify an unpublished source version, follow the [local packaging instructions](https://github.com/RZeroF1/WinUI-Minecraft-SeedMap/blob/main/docs/nuget.md#本地构建与打包).
+Published packages are available on [NuGet](https://www.nuget.org/packages/RZeroF1.Minecraft.SeedMap); source releases are on [GitHub](https://github.com/RZeroF1/Minecraft-SeedUniverse/releases). To verify an unpublished source version, follow the [local packaging instructions](https://github.com/RZeroF1/Minecraft-SeedUniverse/blob/main/docs/nuget.md#本地构建与打包).
 
 ## Quick start
 
@@ -116,4 +116,4 @@ Use `scripts/Test-ArtifactIsolation.ps1` to inspect package contents, license fi
 
 ## License
 
-Original RZeroF1 code is licensed under MPL 2.0; see [LICENSE](https://github.com/RZeroF1/WinUI-Minecraft-SeedMap/blob/main/LICENSE). Cubiomes retains its upstream MIT license and Cubitect copyright notice; see the [third-party notices](https://github.com/RZeroF1/WinUI-Minecraft-SeedMap/blob/main/THIRD-PARTY-NOTICES.md) and [source information](https://github.com/RZeroF1/WinUI-Minecraft-SeedMap/blob/main/licenses/cubiomes/SOURCE.md). License texts and third-party source documents are maintained in English.
+Original RZeroF1 code is licensed under MPL 2.0; see [LICENSE](https://github.com/RZeroF1/Minecraft-SeedUniverse/blob/main/LICENSE). Cubiomes retains its upstream MIT license and Cubitect copyright notice; see the [third-party notices](https://github.com/RZeroF1/Minecraft-SeedUniverse/blob/main/THIRD-PARTY-NOTICES.md) and [source information](https://github.com/RZeroF1/Minecraft-SeedUniverse/blob/main/licenses/cubiomes/SOURCE.md). License texts and third-party source documents are maintained in English.
