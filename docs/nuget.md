@@ -75,6 +75,8 @@ dotnet pack src/RZeroF1.Minecraft.SeedMap.Core/RZeroF1.Minecraft.SeedMap.Core.cs
 
 版本能力由包内 `Api.VersionCapabilities` 返回。实验性 Profile 会随 Native 资产编译，消费端应按各功能的能力状态和已记录限制决定是否启用。
 
+默认主世界的精确基础高度通过 `Api.GetTerrainCapability` 查询。1.18–1.21.11 的 WORLD_SURFACE_WG 和 OCEAN_FLOOR_WG 数学 Profile 随 Native DLL 编译，消费端运行不需要 Java、游戏 JAR 或额外配置文件；后期区块 Heightmap 不属于这些基础高度能力。单点、区域查询与取消示例见 [API 说明](api.md)。
+
 ## 包内容检查
 
 打包后检查公开文件清单与构建输出：

@@ -18,7 +18,7 @@ if not defined VSROOT (
 call "%VSROOT%\Common7\Tools\VsDevCmd.bat" -no_logo -arch=%ARCH% -host_arch=x64
 if errorlevel 1 exit /b %errorlevel%
 pushd "%OUT%"
-cl /nologo /O2 /MT /LD /Brepro /wd4996 /I"%~dp0upstream" "%~dp0seedmap.c" "%~dp0upstream\generator.c" "%~dp0upstream\layers.c" "%~dp0upstream\biomenoise.c" "%~dp0upstream\biomes.c" "%~dp0upstream\noise.c" "%~dp0upstream\finders.c" "%~dp0upstream\util.c" /link /Brepro /OUT:rzero_seedmap.dll
+cl /nologo /O2 /MT /LD /Brepro /wd4996 /I"%~dp0upstream" "%~dp0seedmap.c" "%~dp0terrain.c" "%~dp0upstream\generator.c" "%~dp0upstream\layers.c" "%~dp0upstream\biomenoise.c" "%~dp0upstream\biomes.c" "%~dp0upstream\noise.c" "%~dp0upstream\finders.c" "%~dp0upstream\util.c" /link /Brepro /OUT:rzero_seedmap.dll
 set "RESULT=%errorlevel%"
 popd
 exit /b %RESULT%

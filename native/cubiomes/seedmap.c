@@ -3,6 +3,7 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 #include "seedmap.h"
+#include "terrain.h"
 #include "upstream/finders.h"
 #include "upstream/util.h"
 #include <stdlib.h>
@@ -75,6 +76,11 @@ static int profile_version(int id) {
     return id >= 100 && id < 146 ? legacy_profiles[id-100] : id;
 }
 enum { RELEASE_1_4_2 = 103 };
+typedef struct {
+    Generator generator; /* First member preserves the existing internal casts. */
+    Terrain *terrain;
+    int terrain_profile;
+} SeedMapHandle;
 static uint32_t profile_flags(int id) {
     if (id == RELEASE_1_4_2) return LEGACY_TEMPLE_142;
     if (id == 146) return STRONGHOLD_NO_CHERRY;
@@ -111,7 +117,7 @@ static int64_t floor_div(int64_t a, int b) {
     int64_t q=a/b, r=a%b; return q-(r<0);
 }
 int cm_abi_version(void) { return 1; }
-const char *cm_source_revision(void) { return "ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2+legacy46.1+modern43.3"; }
+const char *cm_source_revision(void) { return "ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2+legacy46.1+modern43.3+terrain27.1"; }
 int cm_versions(cm_version *out, int capacity) {
     int n=(int)(sizeof(versions)/sizeof(*versions));
     if (!out) return n;
@@ -161,16 +167,63 @@ uint32_t cm_biome_color(int id) {
 }
 int cm_create(int mc,uint64_t seed,int dim,void **out) {
     if(!out) return CM_INVALID;
-    *out=NULL;
-    if(!valid_version(mc) || dim < -1 || dim > 1) return CM_UNSUPPORTED;
-    Generator *g=(Generator*)calloc(1,sizeof(Generator));
-    if(!g) return CM_MEMORY;
+    *out = NULL;
+    if (!valid_version(mc) || dim < -1 || dim > 1)
+        return CM_UNSUPPORTED;
+    SeedMapHandle *owner = (SeedMapHandle *)calloc(1, sizeof(SeedMapHandle));
+    if (!owner)
+        return CM_MEMORY;
+    Generator *g = &owner->generator;
+    owner->terrain_profile = mc == 148         ? TERRAIN_118
+                             : mc == MC_1_18_2 ? TERRAIN_1182
+                             : mc == MC_1_21_5 ? TERRAIN_1219
+                                               : TERRAIN_119;
     uint32_t flags = profile_flags(mc);
-    setupGenerator(g,profile_version(mc),flags); applySeed(g,dim,seed); *out=g; return CM_OK;
+    setupGenerator(g, profile_version(mc), flags);
+    applySeed(g, dim, seed);
+    *out = g;
+    return CM_OK;
 }
-void cm_destroy(void *handle) { free(handle); }
-static int check_biome_range(int64_t x,int64_t z,int w,int h,int step,int y) {
-    if(step!=1 && step!=4 && step!=16 && step!=64 && step!=256) return CM_UNSUPPORTED;
+void cm_destroy(void *handle)
+{
+    if (handle)
+        terrain_destroy(((SeedMapHandle *)handle)->terrain);
+    free(handle);
+}
+static int ensure_terrain(SeedMapHandle *owner)
+{
+    if (owner->generator.dim != DIM_OVERWORLD || owner->generator.mc < MC_1_18)
+        return CM_UNSUPPORTED;
+    if (!owner->terrain)
+        owner->terrain = terrain_create(owner->generator.seed, owner->terrain_profile);
+    return owner->terrain ? CM_OK : CM_MEMORY;
+}
+int cm_terrain_heights(void *handle, int type, int64_t x, int64_t z, int w, int h, int step,
+                       int32_t *out, int capacity)
+{
+    SeedMapHandle *owner = (SeedMapHandle *)handle;
+    if (!owner || !out || w <= 0 || h <= 0 || w > 4096 || h > 4096 || (int64_t)w * h > 4096 ||
+        capacity < (int64_t)w * h)
+        return CM_INVALID;
+    if (type < 0 || type > 1)
+        return CM_UNSUPPORTED;
+    if (step <= 0 || step > 30000000 || x < -30000000 || z < -30000000 || x >= 30000000 ||
+        z >= 30000000 || x + (int64_t)(w - 1) * step >= 30000000 ||
+        z + (int64_t)(h - 1) * step >= 30000000)
+        return CM_RANGE;
+    int rc = ensure_terrain(owner);
+    if (rc < 0)
+        return rc;
+    for (int j = 0; j < h; j++)
+        for (int i = 0; i < w; i++)
+            out[j * w + i] = terrain_height(owner->terrain, (int)(x + (int64_t)i * step),
+                                            (int)(z + (int64_t)j * step), type);
+    return CM_OK;
+}
+static int check_biome_range(int64_t x, int64_t z, int w, int h, int step, int y)
+{
+    if (step != 1 && step != 4 && step != 16 && step != 64 && step != 256)
+        return CM_UNSUPPORTED;
     if(x%step || z%step || x < -30000000 || z < -30000000 || x>=30000000 || z>=30000000 ||
        x+(int64_t)(w-1)*step>=30000000 || z+(int64_t)(h-1)*step>=30000000 || y < -64 || y>320)
         return CM_RANGE;
@@ -221,54 +274,263 @@ int cm_biome_sample(void *handle,int64_t x,int64_t z,int step,int y,
         *out=sampleBiomeNoise(&g->bn,NULL,qx,qy,qz,search_state,0);
     return CM_OK;
 }
-int cm_structure_region(void *handle,int type,int rx,int rz,cm_hit *out) {
-    Generator *g=(Generator*)handle;
-    if(!g || !out) return CM_INVALID;
-    if(!valid_type(type)) return CM_UNSUPPORTED;
+/* GenerationStub position predicates use noise-biome quart coordinates,
+ * independently of the caller's ordered biome-query history. */
+static int modern_generation_point(SeedMapHandle *owner, int type, int x, int z)
+{
+    Generator *g = &owner->generator;
+    int rc = ensure_terrain(owner);
+    if (rc < 0)
+        return rc;
+    if (type == Mansion)
+    {
+        uint64_t rng = chunkGenerateRnd(g->seed, x >> 4, z >> 4);
+        int rotation = nextInt(&rng, 4), dx = (rotation == 1 || rotation == 2) ? -5 : 5,
+            dz = rotation >= 2 ? -5 : 5;
+        int px = (x >> 4) * 16 + 7, pz = (z >> 4) * 16 + 7;
+        int y = terrain_height(owner->terrain, px, pz, 0) - 1;
+        int h = terrain_height(owner->terrain, px + dx, pz, 0) - 1;
+        if (h < y)
+            y = h;
+        h = terrain_height(owner->terrain, px, pz + dz, 0) - 1;
+        if (h < y)
+            y = h;
+        h = terrain_height(owner->terrain, px + dx, pz + dz, 0) - 1;
+        if (h < y)
+            y = h;
+        if (y < 60)
+            return 0;
+        int biome = getBiomeAt(g, 4, px >> 2, y >> 2, pz >> 2);
+        return isViableFeatureBiome(g->mc, Mansion, biome);
+    }
+    if (type == Trail_Ruins || type == Village)
+    {
+        static const int kinds[] = {plains, desert, savanna, taiga, snowy_tundra};
+        int count = type == Village ? 5 : 1;
+        for (int i = 0; i < count; i++)
+        {
+            StructureVariant sv;
+            if (!getVariant(&sv, type, g->mc, g->seed, x, z, type == Village ? kinds[i] : -1))
+                continue;
+            int px = (((x >> 4) * 32 + 2 * sv.x + sv.sx - 1) / 2),
+                pz = (((z >> 4) * 32 + 2 * sv.z + sv.sz - 1) / 2);
+            int y = terrain_height(owner->terrain, px, pz, 0) + (type == Trail_Ruins ? -15 : 0);
+            int biome = getBiomeAt(g, 4, px >> 2, y >> 2, pz >> 2);
+            if (type == Trail_Ruins ? isViableFeatureBiome(g->mc, type, biome)
+                                    : biome == kinds[i] || (biome == meadow && kinds[i] == plains))
+                return 1;
+        }
+        return 0;
+    }
+    return CM_UNSUPPORTED;
+}
+static int portal_generation_point(SeedMapHandle *owner, int x, int z)
+{
+    /* Default ruined_portal template dimensions, in numbered then giant order.
+     * The six rows are the standard/desert/jungle/swamp/mountain/ocean setups.
+     * Only dimensions and biome membership are needed, not template blocks. */
+    static const int sizes[13][3] = {
+        {6, 10, 6}, {9, 12, 9}, {8, 9, 9},   {8, 9, 9},    {10, 10, 7},  {5, 7, 7},   {9, 7, 9},
+        {14, 9, 9}, {10, 8, 9}, {12, 8, 10}, {11, 17, 16}, {11, 16, 16}, {16, 16, 16}};
+    static const uint64_t masks[6][4] = {{0x000000096c0158b2ULL, 0, 0x0404c00108001012ULL, 0},
+                                         {0x4ULL, 0, 0, 0},
+                                         {0x0000000000a00000ULL, 0, 0x0000010000000000ULL, 0},
+                                         {0x40ULL, 0, 0x0100000000000000ULL, 0},
+                                         {0x0000007402000008ULL, 0, 0x027a002800000008ULL, 0},
+                                         {0x0007700001000401ULL, 0, 0, 0}};
+    Generator *g = &owner->generator;
+    int rc = ensure_terrain(owner);
+    if (rc < 0)
+        return rc;
+    int ox = (x >> 4) * 16, oz = (z >> 4) * 16;
+    for (int kind = 0; kind < 6; kind++)
+    {
+        uint64_t rng = chunkGenerateRnd(g->seed, x >> 4, z >> 4);
+        int placement = 0; /* 0=surface,1=underground,2=mountain,3=buried,4=ocean floor */
+        if (kind == 0 || kind == 4)
+        {
+            int below = nextFloat(&rng) < 0.5f;
+            placement = below ? (kind == 0 ? 1 : 2) : 0;
+            if (!below)
+                nextFloat(&rng); /* air-pocket sampling is skipped at probability 1. */
+        }
+        else if (kind == 1)
+            placement = 3;
+        else if (kind == 2)
+            nextFloat(&rng);
+        else
+            placement = 4;
+        int giant = nextFloat(&rng) < 0.05f;
+        int template = giant ? 10 + nextInt(&rng, 3) : nextInt(&rng, 10);
+        int rotation = nextInt(&rng, 4), mirror = nextFloat(&rng) >= 0.5f;
+        int sx = sizes[template][0], sy = sizes[template][1], sz = sizes[template][2], px = sx / 2,
+            pz = sz / 2;
+        int minx = 2147483647, maxx = -2147483647, minz = 2147483647, maxz = -2147483647;
+        for (int a = 0; a < 2; a++)
+            for (int b = 0; b < 2; b++)
+            {
+                int xx = a * (sx - 1), zz = b * (sz - 1), rx, rz;
+                if (mirror)
+                    xx = -xx;
+                switch (rotation)
+                {
+                case 0:
+                    rx = xx;
+                    rz = zz;
+                    break;
+                case 1:
+                    rx = px + pz - zz;
+                    rz = pz - px + xx;
+                    break;
+                case 2:
+                    rx = 2 * px - xx;
+                    rz = 2 * pz - zz;
+                    break;
+                default:
+                    rx = px - pz + zz;
+                    rz = px + pz - xx;
+                    break;
+                }
+                if (rx < minx)
+                    minx = rx;
+                if (rx > maxx)
+                    maxx = rx;
+                if (rz < minz)
+                    minz = rz;
+                if (rz > maxz)
+                    maxz = rz;
+            }
+        minx += ox;
+        maxx += ox;
+        minz += oz;
+        maxz += oz;
+        /* BoundingBox center rounds differently from Jigsaw integer division. */
+        int cx = minx + (maxx - minx + 1) / 2, cz = minz + (maxz - minz + 1) / 2;
+        int map = placement == 4 ? 1 : 0, y = terrain_height(owner->terrain, cx, cz, map) - 1;
+        if (placement == 1 || placement == 2)
+        {
+            int upper = y - sy, lower = placement == 1 ? -49 : 70;
+            y = lower < upper ? lower + nextInt(&rng, upper - lower + 1) : upper;
+        }
+        else if (placement == 3)
+            y = y - sy + 2 + nextInt(&rng, 7);
+        /* findSuitableY needs occupancy below overhangs, not just top heights.
+         * Lazily evaluate 16 levels of each base column until three qualify. */
+        while (y > -49)
+        {
+            int columns[4][16], top = y, bottom = y - 15;
+            if (bottom < -48)
+                bottom = -48;
+            terrain_column_range(owner->terrain, minx, minz, bottom, top, columns[0]);
+            terrain_column_range(owner->terrain, maxx, minz, bottom, top, columns[1]);
+            terrain_column_range(owner->terrain, minx, maxz, bottom, top, columns[2]);
+            terrain_column_range(owner->terrain, maxx, maxz, bottom, top, columns[3]);
+            int found = 0;
+            for (; y >= bottom; y--)
+            {
+                int count = 0;
+                for (int i = 0; i < 4; i++)
+                {
+                    int b = columns[i][y - bottom];
+                    if (map ? b == 1 : b != 0)
+                        count++;
+                }
+                if (count >= 3)
+                {
+                    found = 1;
+                    break;
+                }
+            }
+            if (found)
+                break;
+        }
+        int biome = getBiomeAt(g, 4, ox >> 2, y >> 2, oz >> 2);
+        if (biome >= 0 && biome < 256 && (masks[kind][biome >> 6] & (1ULL << (biome & 63))))
+            return 1;
+    }
+    return 0;
+}
+int cm_structure_region(void *handle, int type, int rx, int rz, cm_hit *out)
+{
+    Generator *g = (Generator *)handle;
+    if (!g || !out)
+        return CM_INVALID;
+    if (!valid_type(type))
+        return CM_UNSUPPORTED;
     Pos pos;
-    int flags=0;
-    if(type==Mineshaft) {
-        flags=0; /* Placement only: mine shafts have no biome viability test. */
-        if(g->dim!=0) return CM_UNSUPPORTED;
-        if(rx < -1875000 || rz < -1875000 || rx>=1875000 || rz>=1875000) return CM_RANGE;
+    int flags = 0;
+    if (type == Mineshaft)
+    {
+        flags = 0; /* Placement only: mine shafts have no biome viability test. */
+        if (g->dim != 0)
+            return CM_UNSUPPORTED;
+        if (rx < -1875000 || rz < -1875000 || rx >= 1875000 || rz >= 1875000)
+            return CM_RANGE;
         /* The implementation uses inclusive end chunk coordinates. */
-        if(!getMineshafts(g->mc,g->seed,rx,rz,rx,rz,&pos,1)) return 0;
+        if (!getMineshafts(g->mc, g->seed, rx, rz, rx, rz, &pos, 1))
+            return 0;
         /* getMineshafts outputs block coordinates. */
-    } else {
+    }
+    else
+    {
         StructureConfig c;
-        if(!structure_config(type,g->mc,g->flags,&c) || c.dim!=g->dim) return CM_UNSUPPORTED;
-        int region=16*c.regionSize;
-        if((int64_t)rx*region < -30000000-region || (int64_t)rx*region>=30000000 ||
-           (int64_t)rz*region < -30000000-region || (int64_t)rz*region>=30000000) return CM_RANGE;
+        if (!structure_config(type, g->mc, g->flags, &c) || c.dim != g->dim)
+            return CM_UNSUPPORTED;
+        int region = 16 * c.regionSize;
+        if ((int64_t)rx * region < -30000000 - region || (int64_t)rx * region >= 30000000 ||
+            (int64_t)rz * region < -30000000 - region || (int64_t)rz * region >= 30000000)
+            return CM_RANGE;
         // Raw placement for the early exact Nether profile still uses
         // generator version MC_1_18 (the upstream enum's 1.18.2 alias).
-        if(type==Ruined_Portal_N && (g->flags & EARLY_118_STRUCTURES))
-            pos=getFeaturePos(c,g->seed,rx,rz);
-        else if(!getStructurePos(type,g->mc,g->seed,rx,rz,&pos)) return 0;
-        if(!isViableStructurePos(type,g,pos.x,pos.z,0)) return 0;
-        // Modern ruined portals select a setup, template, rotation and
-        // generation height before the vanilla biome predicate. The current
-        // placement API does not reproduce that height stage.
-        if(type!=Ruined_Portal && type!=Ruined_Portal_N)
-            flags|=1;
-        if(!isViableStructureTerrain(type,g,pos.x,pos.z)) return 0;
-        if(g->mc>=MC_1_18 && (type==Desert_Pyramid || type==Jungle_Temple || type==Mansion)) flags|=2;
-        // The vanilla End City height predicate was added in 1.11.
-        if(type==End_City && g->mc>=MC_1_11) {
-            SurfaceNoise sn;
-            initSurfaceNoise(&sn,DIM_END,g->seed);
-            if(!isViableEndCityTerrain(g,&sn,pos.x,pos.z)) return 0;
-            flags|=4;
+        if (type == Ruined_Portal_N && (g->flags & EARLY_118_STRUCTURES))
+            pos = getFeaturePos(c, g->seed, rx, rz);
+        else if (!getStructurePos(type, g->mc, g->seed, rx, rz, &pos))
+            return 0;
+        if (g->mc >= MC_1_18 && g->dim == DIM_OVERWORLD &&
+            (type == Mansion || type == Village || type == Trail_Ruins || type == Ruined_Portal))
+        {
+            int rc = type == Ruined_Portal
+                         ? portal_generation_point((SeedMapHandle *)handle, pos.x, pos.z)
+                         : modern_generation_point((SeedMapHandle *)handle, type, pos.x, pos.z);
+            if (rc <= 0)
+                return rc;
+            flags |= 1 | 4;
+        }
+        else
+        {
+            if (!isViableStructurePos(type, g, pos.x, pos.z, 0))
+                return 0;
+            // Legacy/Nether portals retain their existing placement-only contract.
+            if (type != Ruined_Portal && type != Ruined_Portal_N)
+                flags |= 1;
+            if (!isViableStructureTerrain(type, g, pos.x, pos.z))
+                return 0;
+            if (g->mc >= MC_1_18 &&
+                (type == Desert_Pyramid || type == Jungle_Temple || type == Mansion))
+                flags |= 2;
+            // The vanilla End City height predicate was added in 1.11.
+            if (type == End_City && g->mc >= MC_1_11)
+            {
+                SurfaceNoise sn;
+                initSurfaceNoise(&sn, DIM_END, g->seed);
+                if (!isViableEndCityTerrain(g, &sn, pos.x, pos.z))
+                    return 0;
+                flags |= 4;
+            }
         }
     }
-    if(pos.x < -30000000 || pos.z < -30000000 || pos.x>=30000000 || pos.z>=30000000) return 0;
-    *out=(cm_hit){type,pos.x,pos.z,flags};
+    if (pos.x < -30000000 || pos.z < -30000000 || pos.x >= 30000000 || pos.z >= 30000000)
+        return 0;
+    *out = (cm_hit){type, pos.x, pos.z, flags};
     return 1;
 }
-int cm_strongholds(void *handle,cm_hit *out,int capacity) {
-    Generator *g=(Generator*)handle;
-    if(!g || !out) return CM_INVALID;
-    if(g->dim!=DIM_OVERWORLD) return CM_UNSUPPORTED;
+int cm_strongholds(void *handle, cm_hit *out, int capacity)
+{
+    Generator *g = (Generator *)handle;
+    if (!g || !out)
+        return CM_INVALID;
+    if (g->dim != DIM_OVERWORLD)
+        return CM_UNSUPPORTED;
     if(capacity<128) return CM_CAPACITY;
     StrongholdIter sh;
     initFirstStronghold(&sh,g->mc,g->seed);

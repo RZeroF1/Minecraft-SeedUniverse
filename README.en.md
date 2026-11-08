@@ -2,7 +2,7 @@
 
 [简体中文](https://github.com/RZeroF1/WinUI-Minecraft-SeedMap/blob/main/README.md) | [English](https://github.com/RZeroF1/WinUI-Minecraft-SeedMap/blob/main/README.en.md)
 
-`RZeroF1.Minecraft.SeedMap` is a .NET 10 SDK for Minecraft Java Edition seed maps. Built on a pinned Cubiomes revision, it provides biome sampling, asynchronous map tiles, structure queries, nearby biome searches, camera and coordinate math, color conversion, geometry helpers, and offscreen BGRA export.
+`RZeroF1.Minecraft.SeedMap` is a .NET 10 SDK for Minecraft Java Edition seed maps. Built on a pinned Cubiomes revision, it provides biome sampling, asynchronous map tiles, structure queries, exact base terrain heights, nearby biome searches, camera and coordinate math, color conversion, geometry helpers, and offscreen BGRA export.
 
 The SDK supplies data, computation, and pixel buffers. Host applications can use WinUI, WPF, Avalonia, WebView, a console, or a server process to implement their own interaction and rendering.
 
@@ -24,10 +24,11 @@ The detailed guides are maintained in Simplified Chinese.
 - Native runtime: Windows `win-x64`
 - Minecraft Java public release catalog: 86 entries: 43 historical releases from `1.4.2` through `1.12.2`, plus the existing 43 entries from `1.13.2` through `1.21.11`; exact Native IDs for `1.2.5`, `1.3.1`, and `1.3.2` remain available to internal regression tooling; see the [version matrix](docs/versions.md)
 - Exact-JAR verification: the 86 public releases and the three internally retained releases from 1.2.5 through 1.3.2 have independent game-JAR Oracle records. Biomes, dimensions, strongholds, mineshafts, and registered structure candidate stages for 1.13.2–1.17.1 are Supported; full structure block generation remains outside the support boundary.
-- Modern version status: Biomes for 1.18–1.21.11 are Supported after 234,864 ordered exact-JAR samples per release, with zero mismatches across all 27 releases. Structure capability remains stage-specific and Experimental where exact candidate or terrain behavior is unresolved.
+- Modern version status: Biomes for 1.18–1.21.11 are Supported after 234,864 ordered exact-JAR samples per release, with zero mismatches across all 27 releases. Village, Woodland Mansion, Ruined Portal, and Trail Ruins now use their actual projected height and three-dimensional biome predicate; their candidate, generation-point, and related base-terrain stages are Supported. Desert Pyramid and Jungle Temple retain an approximate additional terrain check.
+- Terrain heights: Exact `WORLD_SURFACE_WG` and `OCEAN_FLOOR_WG` base-height queries for the default, unblended Overworld in all 27 registered releases from 1.18 through 1.21.11. Results use vanilla `getBaseHeight` first-free-Y semantics; post-carving and decorated chunk heightmaps are outside this API.
 - Dimensions: Overworld `0`, Nether `-1`, End `1`
 - Sampling steps: `1`, `4`, `16`, `64`, `256` blocks
-- Cubiomes revision: base `e61f90580cbdd883214a8054670dacae655e59c0` with PR #162 changes at `ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2` and local `legacy46.1+modern43.3` adaptations
+- Cubiomes revision: base `e61f90580cbdd883214a8054670dacae655e59c0` with PR #162 changes at `ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2` and local `legacy46.1+modern43.3+terrain27.1` adaptations
 
 ```text
 Host UI / image framework
@@ -83,6 +84,20 @@ Console.WriteLine($"{SeedMap.Engine.TileSize} × {SeedMap.Engine.TileSize}, {bgr
 This example runs in a .NET 10 console project with implicit usings enabled. Each tile contains `128 × 128` samples. `Step: 4` samples at four-block intervals, so tile `(0, 0)` covers world coordinates `[0, 512) × [0, 512)`. The BGRA8 buffer uses row-major order with four bytes per pixel.
 
 `Engine` provides two concurrent work slots, cancellable requests, and a 48 MiB LRU tile cache. Each background computation creates and disposes its own native generator. `Export.RenderAsync` produces offscreen pixel buffers that the host can save using its own PNG encoder.
+
+## Base terrain heights
+
+```csharp
+using var generator = SeedMap.Api.Create(world);
+int surfaceY = SeedMap.Api.SampleTerrainHeight(generator, x: 0, z: 0);
+int oceanFloorY = SeedMap.Api.SampleTerrainHeight(
+    generator, x: 0, z: 0, SeedMap.TerrainHeightmap.OceanFloorWorldGen);
+int[] heights = SeedMap.Api.GenerateTerrainHeights(
+    generator, x: -16, z: -16, width: 32, height: 32, step: 1,
+    cancellation: cancellationToken);
+```
+
+Results are row-major. Origins need not align to the positive block step. Each generator owns reusable noise state and bounded caches. Height computation is more expensive than biome sampling; use background batches and result caching for larger maps. `Api.GetTerrainCapability` reports accuracy separately for each release, dimension, and heightmap type.
 
 ## Supported scope
 

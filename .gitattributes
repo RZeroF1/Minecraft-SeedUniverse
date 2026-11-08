@@ -2,4 +2,7 @@ native/cubiomes/upstream/** text eol=lf
 native/cubiomes/build.cmd text eol=lf
 native/cubiomes/seedmap.c text eol=lf
 native/cubiomes/seedmap.h text eol=lf
+native/cubiomes/terrain.c text eol=lf
+native/cubiomes/terrain.h text eol=lf
+native/cubiomes/terrain_tables.h text eol=lf
 licenses/cubiomes/** text eol=lf

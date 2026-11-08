@@ -43,9 +43,15 @@ CM_API int cm_biomes(void *handle, int64_t x, int64_t z, int width, int height,
  * cm_biomes remains independent of search_state and of previous queries. */
 CM_API int cm_biome_sample(void *handle, int64_t x, int64_t z, int step, int y,
                           uint64_t *search_state, int32_t *out);
+/* Default Overworld getBaseHeight, before surface rules, carving or decoration.
+ * type=0 WORLD_SURFACE_WG, type=1 OCEAN_FLOOR_WG. Highest qualifying block Y+1,
+ * or -64 for an empty column. Coordinates are blocks; output is row-major.
+ * Bounded synchronous strips (at most 4096 samples); cancel between calls. */
+CM_API int cm_terrain_heights(void *handle, int type, int64_t x, int64_t z,
+                             int width, int height, int step, int32_t *out, int capacity);
 /* One placement region per call; mine shafts use 16x16 block regions.
  * Strongholds use cm_strongholds. Result flags: 1=biome predicate checked,
- * 2=approximate terrain checked, 4=exact End City terrain checked. A
+ * 2=approximate terrain checked, 4=exact base-height/End City terrain checked. A
  * missing flag means that stage was not performed. No flag implies
  * block-world certainty. */
 CM_API int cm_structure_region(void *handle, int type, int region_x, int region_z, cm_hit *out);

@@ -11,6 +11,7 @@ SeedMap 面向 .NET 10 消费端提供可复用的数据、计算、几何和图
   ├─ UI 状态、输入、图像对象、动画和窗口生命周期
   └─ RZeroF1.Minecraft.SeedMap
        ├─ Api：Native ABI、SafeHandle、版本 Profile 能力表和同步计算
+       ├─ Terrain：类型化高度能力、单点和区域基础噪声列查询
        ├─ Engine：异步瓦片、取消、结构区域查询、附近群系搜索、LRU
        ├─ Camera：屏幕与世界坐标、视野、锚点缩放和采样步长
        ├─ TilePlanner：可见瓦片、预取范围和加载优先级
@@ -35,6 +36,14 @@ SeedMap 面向 .NET 10 消费端提供可复用的数据、计算、几何和图
 历史发行版本使用独立稳定 ABI ID 100–145；其中 100–102 保留给内部精确回归，公开目录从 103 开始。现代发行版保留原有身份并新增精确分界 ID，适配层将发行 ID 映射到经验证的算法参数，ABI ID 不依赖 Cubiomes 枚举顺序。群系与结构 Profile 分开，1.4.2 神殿、1.14 前哨站、1.18 depth 和 1.21 强要塞偏好保留独立规则。Native 修订号包含本地修复标识，构建目标跟踪全部 Native C／H 输入。
 
 每个 Native generator 由 `SafeHandle` 管理，并由一个计算任务独占。同步调用方通过 `using` 释放 generator；异步任务在后台计算中创建并释放自己的 generator。Native DLL 通过 `DllImportSearchPath.AssemblyDirectory` 加载。
+
+## 基础地形高度引擎
+
+`native/cubiomes/terrain.c` 对默认主世界计算基础噪声列。`terrain_tables.h` 保存有限的数学运算图、样条控制点、噪声参数和种子派生常量；构建及运行无需原版 JAR、Mapping、Java、NBT 或 JSON 配置。实现复用 Cubiomes 的随机数和 Perlin 初始化，单独保留原版精度环绕、插值顺序、float 样条、洞穴与 Aquifer 判定。矿脉和 Surface Rules 对目标谓词没有新增高度贡献，未为此重建完整方块生成。
+
+现有 Native handle 在首次高度或相关结构查询时创建 Terrain 状态。四个 Profile 分别覆盖 1.18/1.18.1 的旧 NoiseSampler、1.18.2 的 TerrainShaper、1.19–1.21.8 和 1.21.9–1.21.11 的新 preliminary surface。每个 handle 独占全部可变状态；节点、流体和初步地表缓存容量固定，FlatCache 的失效代次随单 cell 原点变化，普通数学采样可复用。无进程级种子缓存，释放 handle 释放高度状态。
+
+WORLD_SURFACE_WG 与 OCEAN_FLOOR_WG 返回 `getBaseHeight` 的首个空闲 Y，结构共用该引擎读取旋转四角高度、Jigsaw 投影或 Portal 的四角列占用分类。列分类只区分目标谓词所需的空气、固体、水、熔岩，内部接口不对外作为方块 ID。Native 新增 `cm_terrain_heights`，保留 ABI 1 的既有签名；托管层用 SafeHandle 承接生命周期，区域查询以最多 64 点分段取消。
 
 ## 异步任务与缓存
 

@@ -24,35 +24,59 @@
 | 1.16.4 | 20 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
 | 1.16.5 | 20 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
 | 1.17.1 | 21 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
-| 1.18 | 148 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.18.1 | 148 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.18.2 | 22 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.19 | 23 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.19.1 | 23 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.19.2 | 23 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.19.3 | 24 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.19.4 | 24 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.20 | 25 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.20.1 | 25 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.20.2 | 25 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.20.3 | 25 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.20.4 | 25 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.20.5 | 25 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.20.6 | 25 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.21 | 26 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.21.1 | 26 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.21.2 | 27 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.21.3 | 27 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.21.4 | 28 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.21.5 | 146 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.21.6 | 146 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.21.7 | 146 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.21.8 | 146 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.21.9 | 29 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.21.10 | 29 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
-| 1.21.11 | 29 | Supported | Experimental | Supported | Supported | GameJarAlgorithms |
+| 1.18 | 148 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
+| 1.18.1 | 148 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
+| 1.18.2 | 22 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
+| 1.19 | 23 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
+| 1.19.1 | 23 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
+| 1.19.2 | 23 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
+| 1.19.3 | 24 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
+| 1.19.4 | 24 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
+| 1.20 | 25 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
+| 1.20.1 | 25 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
+| 1.20.2 | 25 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
+| 1.20.3 | 25 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
+| 1.20.4 | 25 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
+| 1.20.5 | 25 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
+| 1.20.6 | 25 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
+| 1.21 | 26 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
+| 1.21.1 | 26 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
+| 1.21.2 | 27 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
+| 1.21.3 | 27 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
+| 1.21.4 | 28 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
+| 1.21.5 | 146 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
+| 1.21.6 | 146 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
+| 1.21.7 | 146 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
+| 1.21.8 | 146 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
+| 1.21.9 | 29 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
+| 1.21.10 | 29 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
+| 1.21.11 | 29 | Supported | Supported | Supported | Supported | GameJarAlgorithms |
 
-1.18–1.21.11 的 `Api.SampleBiome` 已通过每个精确 JAR 234,864 个有效样本、2,646 个边界拒绝的有序回放，27 版共 6,341,328 个有效样本且零差异。原版 `Climate.ParameterList` 会把上次命中的叶节点用于等距离搜索；该状态在连续使用的 biome source／sampler 实例内延续，`SampleBiome` 将它保存在独占 generator 上，`ResetBiomeSampling` 清除上次命中状态。`Api.Generate` 则生成由世界参数和范围决定的独立、确定性瓦片，缓存和瓦片拼接不依赖生成顺序；因此它不声称复现任意原版有序查询历史中的 tie 选择。结构查询不共享此有序采样状态，另按每种结构的 biome、生成点与地形阶段验证。现代 27 版的 RawPlacement 与 Stronghold、Mineshaft 位置查询已逐版对照；Village、Woodland Mansion、Ruined Portal 与 Trail Ruins 的候选和 generation-point 仍受原版高度投影/地形条件限制，结构总体继续为 Experimental。
+1.18–1.21.11 的 `Api.SampleBiome` 已通过每个精确 JAR 234,864 个有效样本、2,646 个边界拒绝的有序回放，27 版共 6,341,328 个有效样本且零差异。原版 `Climate.ParameterList` 会把上次命中的叶节点用于等距离搜索；该状态在连续使用的 biome source／sampler 实例内延续，`SampleBiome` 将它保存在独占 generator 上，`ResetBiomeSampling` 清除上次命中状态。`Api.Generate` 则生成由世界参数和范围决定的独立、确定性瓦片，缓存和瓦片拼接不依赖生成顺序；因此它不声称复现任意原版有序查询历史中的 tie 选择。结构查询不共享此有序采样状态，另按每种结构的 biome、生成点与地形阶段验证。现代 27 版的 RawPlacement、Stronghold、Mineshaft 与登记结构的候选／GenerationPoint 已逐版对照。Village、Woodland Mansion、Ruined Portal、Trail Ruins 使用精确基础高度和 GenerationStub 的三维群系谓词，其相关 Terrain 阶段为 Supported；FullGeneration 不随之晋级。
+
+## 现代基础高度与结构阶段
+
+| 精确高度 Profile | 实际验证发行版本 | 主世界 WORLD_SURFACE_WG／OCEAN_FLOOR_WG | 默认垂直范围 |
+| --- | --- | --- | --- |
+| terrain-1.18 | 1.18、1.18.1 | Exact | [-64, 320) |
+| terrain-1.18.2 | 1.18.2 | Exact | [-64, 320) |
+| terrain-1.19 | 1.19、1.19.1、1.19.2、1.19.3、1.19.4、1.20、1.20.1、1.20.2、1.20.3、1.20.4、1.20.5、1.20.6、1.21、1.21.1、1.21.2、1.21.3、1.21.4、1.21.5、1.21.6、1.21.7、1.21.8 | Exact | [-64, 320) |
+| terrain-1.21.9 | 1.21.9、1.21.10、1.21.11 | Exact | [-64, 320) |
+
+高度以原版 `getBaseHeight` 为合同，每版两个类型共 756 个严格整数高度样本，包含不同种子、正负坐标、世界边界和跨 cell／chunk 采样。1.18、1.18.2、1.19、1.20.6、1.21.11 另有完整基础列状态对照。返回最高满足谓词方块的 Y+1；最低空列为 -64。能力只适用于默认、未混合主世界的基础噪声列，旧版、其它维度和后期 Heightmap 类型为 Unsupported。`mapApproxHeight` 仍为 Approximate，未用于这些 Exact 查询。
+
+| 现代结构 | RawPlacement | BiomePredicate | Candidate | GenerationPoint | Terrain | FullGeneration |
+| --- | --- | --- | --- | --- | --- | --- |
+| Village | Supported | Supported | Supported | Supported | Supported：Jigsaw 高度投影 | Unsupported |
+| Woodland Mansion | Supported | Supported | Supported | Supported | Supported：旋转四角最低高度 | Unsupported |
+| Ruined Portal（主世界） | Supported | Supported | Supported | Supported | Supported：模板变换、列谓词与 suitable Y | Unsupported |
+| Trail Ruins（1.20 起） | Supported | Supported | Supported | Supported | Supported：起始高度与投影 | Unsupported |
+| Desert Pyramid／Jungle Temple | Supported | Supported | Supported | Supported | Experimental：额外近似筛选 | Unsupported |
+| Mineshaft | Supported | Unsupported：不适用 | Supported：placement-only | Unsupported：不查询 stub | Unsupported | Unsupported |
+
+Terrain 的 Supported 仅覆盖表中已复现的基础高度／生成点规则，不能解释为完成方块落地或结构地形变形。WorldSurface、OceanFloor、MotionBlocking、MotionBlockingNoLeaves 是后期区块语义，目前为 Unsupported；原版对基础列应用同名谓词的 `getBaseHeight` 结果不代表完整生成后的 Heightmap。
+
+## 历史公开版本
 
 | 发行版本 | 稳定 Native ID | 群系／维度 | 结构候选 | 强要塞 | 完整方块生成 |
 | --- | --- | --- | --- | --- | --- |
@@ -102,7 +126,7 @@
 
 ## 实际结构能力
 
-每版只列出原版存在的结构：公开版本全部有矿井、村庄、Nether Fortress 和强要塞；内部保留的 1.2.5、1.3.1、1.3.2 也有独立结构回归。神殿从内部研究范围的 1.3.1 起验证，女巫小屋从 1.4.2 起验证，Monument 从 1.8 起验证，Igloo／End City 从 1.9 起验证，Mansion 从 1.11 起验证。`StructureCapabilities` 按实际结构列出 RawPlacement、BiomePredicate、Candidates、GenerationPoint、Terrain 和 FullGeneration。Mineshaft 的公开查询是 placement-only，其 BiomePredicate 与 GenerationPoint 为 Unsupported。1.13.2–1.17.1 的登记结构候选与位置谓词在精确 JAR 样本中匹配；其中精确 1.14 以及 1.14.1–1.14.4 的 Ocean Ruin、Shipwreck、Village 对照未复现旧报告的大批差异。旧 `3943/829` 统计来自研究工具对稳定 Native ID 的 profile 映射错误，已作废。现代 Desert Pyramid 和 Jungle Temple 的候选与生成点已对照；地形阶段保留 Experimental。现代 Village、Mansion、Ruined Portal 与 Trail Ruins 的候选／生成点阶段仍为 Experimental；原版 1.21.11 的通用谓词会在 generation stub 的实际 `(x,y,z)` 调用 `getNoiseBiome`，而 Mansion、Ruined Portal、Trail Ruins 还会读取 `WORLD_SURFACE_WG` 或其它高度结果。
+每版只列出原版存在的结构：公开版本全部有矿井、村庄、Nether Fortress 和强要塞；内部保留的 1.2.5、1.3.1、1.3.2 也有独立结构回归。神殿从内部研究范围的 1.3.1 起验证，女巫小屋从 1.4.2 起验证，Monument 从 1.8 起验证，Igloo／End City 从 1.9 起验证，Mansion 从 1.11 起验证。`StructureCapabilities` 按实际结构列出 RawPlacement、BiomePredicate、Candidates、GenerationPoint、Terrain 和 FullGeneration。Mineshaft 的公开查询是 placement-only，其 BiomePredicate 与 GenerationPoint 为 Unsupported。1.13.2–1.17.1 的登记结构候选与位置谓词在精确 JAR 样本中匹配；其中精确 1.14 以及 1.14.1–1.14.4 的 Ocean Ruin、Shipwreck、Village 对照未复现旧报告的大批差异。旧 `3943/829` 统计来自研究工具对稳定 Native ID 的 profile 映射错误，已作废。现代 Desert Pyramid 和 Jungle Temple 的候选与生成点已对照；两者的附加近似 Terrain 阶段保留 Experimental。现代 Village、Mansion、Ruined Portal 与 Trail Ruins 的候选／生成点和相关基础高度已达到 Supported；通用谓词按 generation stub 实际 `(x,y,z)` 调用 `getNoiseBiome`。FullGeneration 始终为 Unsupported。
 
 End City 的 1.9–1.10.2 位置谓词没有高度过滤；1.11–1.12.2 复现原版 ChunkPrimer 索引和旋转 seed 的行为。仅这一位置谓词所需的高度检查被验证；完整末地地形及末地城方块放置仍未声明支持。Mansion 的支持同样只到 canSpawn 群系及位置谓词。
 

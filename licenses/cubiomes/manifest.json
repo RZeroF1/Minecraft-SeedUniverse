@@ -1,6 +1,6 @@
 {
   "component": "Cubiomes",
-  "revision": "ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2+legacy46.1+modern43.3",
+  "revision": "ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2+legacy46.1+modern43.3+terrain27.1",
   "license": "MIT",
   "source": "https://github.com/Cubitect/cubiomes",
   "files": {
@@ -27,10 +27,14 @@
     "native/cubiomes/upstream/tables/btree21wd.h": "ce8cc83f9be7e2bd6e61589bfb5c401451ac01c49032f51949ad7de0cfb303d9",
     "native/cubiomes/upstream/util.c": "40885a2407e3253595f5a84ba30d9223d284188c759278f014dd03f823638ae1",
     "native/cubiomes/upstream/util.h": "086fb1d99ac9da860be98ad5239acb7bf4f326a0c30b554710909c36d4b3e154",
-    "native/cubiomes/build.cmd": "db0f4f5efc5703766b107e6a3aa6ccef794aafb34702d44017f872cae2f1d0b1",
-    "native/cubiomes/seedmap.c": "fa5255ce01f4a27e8939fe1dd477bd4a541b6630bab9ca06f066a86c4a913517",
-    "native/cubiomes/seedmap.h": "2b6754c778aa4c15970b525d5d577180901b3173122390a83ac726976e80b46e"
+    "native/cubiomes/build.cmd": "d31349646a63bf35f8fbdb66d538f331548c8ae8d82a79b575ada8a5f77f240a",
+    "native/cubiomes/seedmap.c": "5ffd68fba05ddb2d98c780002a81f7a224daeffc4b7f614ef581417d025d1d6c",
+    "native/cubiomes/seedmap.h": "84954d686064136bb1c56b5787ad086669939508fc5f8909462522cda7cc53fb",
+    "native/cubiomes/terrain.c": "17bbe7dcc2649d7fe6f67646c014e7537bd35185fd8fd737f9c2a3af59c2fd60",
+    "native/cubiomes/terrain.h": "d8571d318531e3fd5bc121e777821bbd7a1d11e59e2e9d240e36556fca0fdbe9",
+    "native/cubiomes/terrain_tables.h": "dd26d0bb2845d17b05090aa2622d044b9a236d21439f55455b566c3be1ad7673"
   },
   "base_revision": "ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2",
-  "local_changes": "Exact Java 1.2.5-1.12.2 release profiles, vanilla structure predicates, legacy End semantics, and modern 1.13.2-1.21.11 release adaptations; Ordered climate ties and exact 1.18+ structure profile/candidate refinements."
+  "local_changes": "Exact Java 1.2.5-1.12.2 release profiles, vanilla structure predicates, legacy End semantics, and modern 1.13.2-1.21.11 release adaptations; Ordered climate ties and exact 1.18+ structure profile/candidate refinements. Exact default Overworld base-height profiles for Java 1.18-1.21.11 and height-aware modern structure generation-point predicates.",
+  "project_file_license": "MPL-2.0 for native/cubiomes/{seedmap.c,seedmap.h,terrain.c,terrain.h,terrain_tables.h,build.cmd}; upstream/ retains MIT."
 }

@@ -2,7 +2,7 @@
 
 [简体中文](https://github.com/RZeroF1/WinUI-Minecraft-SeedMap/blob/main/README.md) | [English](https://github.com/RZeroF1/WinUI-Minecraft-SeedMap/blob/main/README.en.md)
 
-`RZeroF1.Minecraft.SeedMap` 是面向 Minecraft Java Edition 的 .NET 10 种子地图 SDK，基于固定修订版 Cubiomes，提供群系采样、异步地图瓦片、结构查询、附近群系搜索、坐标与相机数学、颜色转换、几何辅助和离屏 BGRA 导出。
+`RZeroF1.Minecraft.SeedMap` 是面向 Minecraft Java Edition 的 .NET 10 种子地图 SDK，基于固定修订版 Cubiomes，提供群系采样、异步地图瓦片、结构查询、精确基础地形高度、附近群系搜索、坐标与相机数学、颜色转换、几何辅助和离屏 BGRA 导出。
 
 SDK 提供数据、计算和图像缓冲区。消费端可以使用 WinUI、WPF、Avalonia、WebView、控制台或服务端程序，自行实现交互和图像呈现。
 
@@ -23,9 +23,11 @@ SDK 提供数据、计算和图像缓冲区。消费端可以使用 WinUI、WPF�
 - Minecraft Java 公开发行版本目录：包含 `1.4.2`–`1.12.2` 的 43 个历史发行版，以及 `1.13.2`–`1.21.11` 的 43 个现代条目，共 86 项；`1.2.5`、`1.3.1`、`1.3.2` 的精确 Native ID 与回归入口保留在内部；逐版能力见 [版本矩阵](docs/versions.md)
 - 原版验证：公开目录对应的 86 个发行版，以及内部保留的 1.2.5–1.3.2 三个发行版，都有独立精确游戏 JAR Oracle 对照；1.13.2–1.17.1 的群系、维度、强要塞、矿井和已登记结构候选阶段达到 Supported，完整结构方块生成不属于支持范围
 - 现代版本状态：1.18–1.21.11 的群系已通过每版 234,864 个有效样本的有序原版回放，27 版零差异并标为 Supported；结构仍按具体类型和验证阶段区分
+- 地形高度：1.18–1.21.11 默认主世界的 `WORLD_SURFACE_WG` 与 `OCEAN_FLOOR_WG` 提供 Exact 单点和区域查询；高度为原版 `getBaseHeight` 的首个空闲 Y，不包含雕刻、装饰和完整区块生成
+- 现代结构：Village、Woodland Mansion、Ruined Portal、Trail Ruins 使用实际生成点高度和三维群系谓词，Candidate、GenerationPoint 与相关 Terrain 阶段为 Supported；完整结构方块生成仍为 Unsupported
 - 维度：主世界 `0`、下界 `-1`、末地 `1`
 - 采样步长：`1`、`4`、`16`、`64`、`256` 个方块
-- Cubiomes 修订版：基于 `e61f90580cbdd883214a8054670dacae655e59c0`，应用 PR #162 `ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2` 与 `legacy46.1+modern43.3` 本地版本修复
+- Cubiomes 修订版：基于 `e61f90580cbdd883214a8054670dacae655e59c0`，应用 PR #162 `ca9fcb4e2b4f29a88b15a19fe1f00a73bf503ec2` 与 `legacy46.1+modern43.3+terrain27.1` 本地版本修复
 
 ```text
 消费端 UI / 图像框架
@@ -82,9 +84,23 @@ Console.WriteLine($"{SeedMap.Engine.TileSize} × {SeedMap.Engine.TileSize}, {bgr
 
 `Engine` 提供两个并发工作槽、可取消请求和 48 MiB LRU 瓦片缓存，每个后台计算任务独立创建并释放 Native generator。`Export.RenderAsync` 可以生成离屏像素，消费端可使用自己的 PNG 编码器保存图像。
 
+## 基础地形高度
+
+```csharp
+using var generator = SeedMap.Api.Create(world);
+int surfaceY = SeedMap.Api.SampleTerrainHeight(generator, x: 0, z: 0);
+int oceanFloorY = SeedMap.Api.SampleTerrainHeight(
+    generator, x: 0, z: 0, SeedMap.TerrainHeightmap.OceanFloorWorldGen);
+int[] heights = SeedMap.Api.GenerateTerrainHeights(
+    generator, x: -16, z: -16, width: 32, height: 32, step: 1,
+    cancellation: cancellationToken);
+```
+
+区域结果按 `row * width + column` 排列，原点无需与采样步长对齐。Generator 独占自己的噪声和有限缓存，可复用来计算相邻区域。高度计算成本高于群系采样，适合结构判定、局部剖面和按需区域分析；大范围高度地图应使用后台分批计算并缓存结果。完整语义见 [API 说明](docs/api.md)。
+
 ## 支持范围
 
-当前包提供 Windows x64 原生资产，面向原版 Minecraft Java 世界计算。版本选择和功能状态可通过 `Api.VersionCapabilities` 查询；结构结果采用 Cubiomes 的位置预测和适用性检查，实验性版本不会被当作完整结构支持。旧版结构支持限于对应能力目录的位置谓词，早期 IntCache 历史状态按实验性处理。26.x、自定义世界生成、Minecraft Bedrock、混合版本存档和完整方块世界生成不在当前支持范围内。
+当前包提供 Windows x64 原生资产，面向原版 Minecraft Java 默认世界计算。`Api.VersionCapabilities` 按结构阶段登记能力，`Api.GetTerrainCapability` 按版本、维度和 Heightmap 类型报告 Exact、Approximate、Experimental 或 Unsupported。高度引擎覆盖未混合默认主世界的基础噪声列；后期 Heightmap、26.x、自定义世界生成、Minecraft Bedrock、混合版本存档和完整方块世界生成不在当前支持范围内。
 
 ## 构建与打包
 

@@ -31,21 +31,17 @@ public static partial class Api
             .Where(structure => structure.Id != 100)
             .Select(structure =>
             {
-                bool exactCandidate = establishedModernQuery ||
-                    structure.Id is not (5 or 9 or 11 or 23);
-                bool exactBiomePredicate = structure.Id != 15 &&
-                    (establishedModernQuery || structure.Id is not (5 or 9 or 11 or 23));
-                bool exactGenerationPoint = structure.Id != 15 &&
-                    (establishedModernQuery || structure.Id is not (5 or 9 or 11 or 23));
-                VersionSupportStatus terrain = structure.Id is 1 or 2 or 9
-                    ? VersionSupportStatus.Experimental
-                    : (!establishedModernQuery && (structure.Id is 5 or 11 or 23))
+                bool exactBiomePredicate = structure.Id != 15;
+                bool exactGenerationPoint = structure.Id != 15;
+                VersionSupportStatus terrain = !establishedModernQuery && (structure.Id is 5 or 9 or 11 or 23)
+                    ? VersionSupportStatus.Supported
+                    : structure.Id is 1 or 2 or 9
                         ? VersionSupportStatus.Experimental
                         : structure.Id == 20
                             ? VersionSupportStatus.Supported
                             : VersionSupportStatus.Unsupported;
                 var capability = new StructureCapability(structure.Id, structure.Key,
-                    exactCandidate ? VersionSupportStatus.Supported : VersionSupportStatus.Experimental,
+                    VersionSupportStatus.Supported,
                     terrain,
                     VersionSupportStatus.Unsupported)
                 {
@@ -62,7 +58,7 @@ public static partial class Api
         bool biomesSupported = true;
         string notes = establishedModernQuery
             ? "精确 JAR 的五尺度群系、三维度、128 强要塞、矿井 RNG 及已登记结构的位置谓词已独立对照；完整结构方块生成仍未声明。"
-            : "27 个精确 JAR 的群系、三维度、128 强要塞、原始 placement 和逐结构阶段已独立对照；Desert Pyramid、Jungle Temple、Village、Mansion、Ruined Portal 和 Trail Ruins 的候选或高度阶段仍属实验性。";
+            : "27 个精确 JAR 的群系、三维度、128 强要塞、placement 与逐结构生成点已独立对照；默认主世界 WORLD_SURFACE_WG/OCEAN_FLOOR_WG 和 Village、Mansion、Ruined Portal、Trail Ruins 的基础高度判定已验证。Desert Pyramid、Jungle Temple 的附加 Terrain 检查仍为近似；完整结构方块生成不属于支持范围。";
         return new(release, biomeProfile, structureProfile, version.Id,
             structuresSupported ? VersionSupportStatus.Supported : VersionSupportStatus.Experimental,
             biomesSupported ? VersionSupportStatus.Supported : VersionSupportStatus.Experimental,
